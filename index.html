@@ -8,6 +8,34 @@
     <script src="https://cdn.jsdelivr.net/npm/japanese-holidays/lib/japanese-holidays.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Firebase SDK (v11 Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+        // Firebaseの設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyDPnNvsBesof9ZguJ_p37qaVTlwoYeZPN8",
+            authDomain: "tmpu-gastro-qqcall.firebaseapp.com",
+            projectId: "tmpu-gastro-qqcall",
+            storageBucket: "tmpu-gastro-qqcall.firebasestorage.app",
+            messagingSenderId: "466411946448",
+            appId: "1:466411946448:web:b43063eafaeb6545aab9d5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // グローバルスコープにFirebaseの関数とdbインスタンスを公開（既存のロジックから呼ぶため）
+        window.firebaseDb = db;
+        window.firebaseDoc = doc;
+        window.firebaseSetDoc = setDoc;
+        window.firebaseOnSnapshot = onSnapshot;
+
+        // Firebase準備完了イベントを発火
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -24,8 +52,29 @@
         .toast-enter { opacity: 1; transform: translate(-50%, 0); }
         .toast-leave { opacity: 0; transform: translate(-50%, -20px); pointer-events: none; }
         
-        .pdf-exporting { width: 1200px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }
-        .pdf-exporting #calendar-header { padding-top: 16px !important; padding-bottom: 16px !important; }
+        /* PDF出力時のレイアウト維持用 */
+        .pdf-exporting { width: 1400px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; height: auto !important; }
+        .pdf-exporting * { overflow: visible !important; line-height: 1.35 !important; }
+        .pdf-exporting #calendar-header { padding-top: 20px !important; padding-bottom: 20px !important; }
+        .pdf-exporting .calendar-scroll { overflow: visible !important; } /* キャプチャ見切れ防止 */
+        .pdf-exporting #calendar-grid { 
+            display: grid !important; 
+            grid-template-columns: repeat(7, minmax(0, 1fr)) !important; 
+            min-width: 1400px !important; 
+            gap: 1px !important;
+        }
+        /* PDF出力時は文字の省略(truncate)を解除してフル表示 */
+        .pdf-exporting .truncate { overflow: visible !important; text-overflow: clip !important; white-space: normal !important; word-break: break-all !important; }
+        .pdf-exporting .whitespace-nowrap { white-space: normal !important; }
+        
+        /* PDF出力時の文字サイズ調整（少し大きめに） */
+        .pdf-exporting .doc-main-name { font-size: 15px !important; font-weight: 700 !important; }
+        .pdf-exporting .doc-backup-name { font-size: 12px !important; }
+
+        /* PDF出力時の表示切り替え用 */
+        .pdf-exporting .mobile-only { display: none !important; }
+        .pdf-exporting .desktop-only { display: block !important; }
+        .pdf-exporting .desktop-only-contents { display: contents !important; }
 
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
@@ -43,83 +92,86 @@
 
     <div class="max-w-[1400px] mx-auto space-y-6">
         <!-- ヘッダー -->
-        <header class="flex flex-col xl:flex-row justify-between items-center bg-white/80 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-slate-100 gap-4">
-            <div class="flex flex-col items-center xl:items-start gap-2">
+        <header class="flex flex-col xl:flex-row justify-between items-center bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 gap-4">
+            <div class="flex flex-col items-center xl:items-start gap-2 w-full xl:w-auto">
                 <div class="flex items-center gap-3">
                     <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-200">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <h1 class="text-2xl font-bold text-slate-800 tracking-tight flex items-center flex-wrap gap-2">
-                        消化器当番調整アプリ
-                        <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100 shadow-sm flex items-center gap-1.5 whitespace-nowrap">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            クラウド同期中
-                        </span>
-                    </h1>
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">消化器当番調整アプリ</h1>
                 </div>
                 
                 <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                    <button id="btn-prev-month" class="p-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all flex items-center justify-center" title="前月">
+                    <button onclick="prevMonth()" class="p-2 sm:px-3 rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all flex items-center justify-center" title="前月">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                     </button>
-                    <span id="current-month-display" class="font-bold text-[17px] text-indigo-700 min-w-[120px] text-center px-2 tracking-wide"></span>
-                    <button id="btn-next-month" class="p-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all flex items-center justify-center" title="翌月">
+                    <span id="current-month-display" class="font-bold text-[16px] sm:text-[17px] text-indigo-700 min-w-[110px] sm:min-w-[120px] text-center px-2 tracking-wide"></span>
+                    <button onclick="nextMonth()" class="p-2 sm:px-3 rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all flex items-center justify-center" title="翌月">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                     </button>
                 </div>
             </div>
 
             <!-- タブ切り替え -->
-            <div class="flex bg-slate-100 p-1 rounded-xl shadow-inner w-full sm:w-auto overflow-x-auto">
-                <button id="btn-tab-schedule" class="tab-btn flex-1 sm:flex-none px-6 py-2.5 text-sm font-semibold rounded-lg bg-white text-indigo-700 shadow-sm transition-all whitespace-nowrap">スケジュール</button>
-                <button id="btn-tab-settings" class="tab-btn flex-1 sm:flex-none px-6 py-2.5 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50/50 transition-all whitespace-nowrap">月間設定</button>
-                <button id="btn-tab-doctors" class="tab-btn flex-1 sm:flex-none px-6 py-2.5 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50/50 transition-all whitespace-nowrap">医師名簿設定</button>
+            <div class="flex bg-slate-100 p-1 rounded-xl shadow-inner w-full sm:w-auto overflow-x-auto no-scrollbar">
+                <button onclick="switchTab('tab-schedule')" id="btn-tab-schedule" class="tab-btn flex-1 sm:flex-none px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-semibold rounded-lg bg-white text-indigo-700 shadow-sm transition-all whitespace-nowrap">スケジュール</button>
+                <button onclick="switchTab('tab-settings')" id="btn-tab-settings" class="tab-btn flex-1 sm:flex-none px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50/50 transition-all whitespace-nowrap">月間設定</button>
+                <button onclick="switchTab('tab-doctors')" id="btn-tab-doctors" class="tab-btn flex-1 sm:flex-none px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50/50 transition-all whitespace-nowrap">医師設定</button>
             </div>
         </header>
 
         <!-- タブ: スケジュール表示 -->
-        <div id="tab-schedule" class="tab-content space-y-6 fade-in">
-            <div id="schedule-actions" class="flex flex-wrap justify-end gap-3">
-                <button id="btn-reset-schedule" class="px-6 py-3 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 active:scale-95 mr-auto sm:mr-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    リセット
+        <div id="tab-schedule" class="tab-content space-y-4 sm:space-y-6 fade-in">
+            <!-- スマホ画面でボタンが折り返せるように flex-wrap を追加 -->
+            <div id="schedule-actions" class="flex flex-wrap justify-end gap-2 sm:gap-3">
+                <button onclick="resetCurrentMonthSchedule()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95 mr-auto">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span id="reset-btn-text">月をリセット</span>
                 </button>
-                <button id="btn-export-pdf" class="px-6 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 active:scale-95">
-                    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <button onclick="exportToPDF()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     PDF出力
                 </button>
-                <button id="btn-generate-schedule" class="group px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2 active:scale-95">
-                    <svg class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    スケジュールを自動生成
+                <button onclick="generateSchedule()" class="group px-3 sm:px-6 py-2.5 sm:py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span class="hidden sm:inline">スケジュール</span>自動生成
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
                 <!-- カレンダー表示 -->
-                <div id="calendar-export-area" class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div id="calendar-header" class="hidden px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div id="calendar-export-area" class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative">
+                    <div id="calendar-header" class="hidden px-4 sm:px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                         <h2 class="font-bold text-lg text-slate-800" id="export-month-display"></h2>
-                        <span class="text-sm text-slate-500 font-medium bg-white px-3 py-1 rounded-lg border border-slate-200">消化器当番スケジュール</span>
+                        <span class="text-xs sm:text-sm text-slate-500 font-medium bg-white px-3 py-1 rounded-lg border border-slate-200">消化器当番スケジュール</span>
                     </div>
-                    <div id="calendar-grid" class="grid grid-cols-7 bg-slate-100 gap-[1px]"></div>
+                    <!-- スマホ向けにレスポンシブなコンテナに変更 -->
+                    <div class="calendar-scroll w-full">
+                        <div id="calendar-grid" class="grid grid-cols-1 md:grid-cols-7 bg-slate-100 md:gap-[1px] md:min-w-[900px] lg:min-w-full">
+                            <!-- JSで描画 -->
+                        </div>
+                    </div>
                 </div>
+
                 <!-- 集計表 -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden self-start sticky top-6">
-                    <div class="px-5 py-4 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden self-start lg:sticky lg:top-6">
+                    <div class="px-4 sm:px-5 py-3 sm:py-4 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2">
                         <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        <h2 class="font-bold text-slate-700">当番回数 集計</h2>
+                        <h2 class="font-bold text-sm sm:text-base text-slate-700">当番回数 集計</h2>
                     </div>
-                    <div id="summary-container" class="overflow-x-auto max-h-[600px] overflow-y-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider sticky top-0 z-10 shadow-sm">
+                    <div id="summary-container" class="overflow-x-auto max-h-[400px] lg:max-h-[600px] overflow-y-auto">
+                        <table class="w-full text-xs sm:text-sm text-left">
+                            <thead class="bg-slate-50 text-slate-500 text-[10px] sm:text-xs uppercase tracking-wider sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th class="py-3 px-4 font-semibold">氏名</th>
-                                    <th class="py-3 px-2 text-center font-semibold">1st Call</th>
-                                    <th class="py-3 px-2 text-center font-semibold">Back up</th>
-                                    <th class="py-3 px-2 text-center font-bold text-indigo-600">合計</th>
+                                    <th class="py-2.5 sm:py-3 px-3 sm:px-4 font-semibold">氏名</th>
+                                    <th class="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center font-semibold">1st</th>
+                                    <th class="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center font-semibold">Backup</th>
+                                    <th class="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center font-bold text-indigo-600">計</th>
                                 </tr>
                             </thead>
-                            <tbody id="summary-tbody" class="divide-y divide-slate-100"></tbody>
+                            <tbody id="summary-tbody" class="divide-y divide-slate-100">
+                                <!-- JSで描画 -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -127,76 +179,80 @@
         </div>
 
         <!-- タブ: 条件設定 -->
-        <div id="tab-settings" class="tab-content hidden space-y-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div id="tab-settings" class="tab-content hidden space-y-4 sm:space-y-6">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex items-center gap-2 mb-2">
                     <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <h2 class="font-bold text-lg text-slate-800">追加の休診日設定</h2>
+                    <h2 class="font-bold text-base sm:text-lg text-slate-800">追加の休診日設定</h2>
                 </div>
-                <p class="text-sm text-slate-500 mb-4">土日と祝日は自動的に休日扱いになります。それ以外の臨時休診日などがある場合は選択してください。</p>
-                <div id="custom-holidays-container" class="flex flex-wrap gap-2"></div>
+                <p class="text-xs sm:text-sm text-slate-500 mb-4">土日と祝日は自動的に休日扱いになります。それ以外の臨時休診日などがある場合は選択してください。</p>
+                <div id="custom-holidays-container" class="flex flex-wrap gap-1.5 sm:gap-2">
+                    <!-- JSで描画 -->
+                </div>
             </div>
 
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 sm:mb-4 gap-2">
                     <div class="flex items-center gap-2">
                         <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                        <h2 class="font-bold text-lg text-slate-800">除外日・不可条件の入力</h2>
+                        <h2 class="font-bold text-base sm:text-lg text-slate-800">除外日・不可条件の入力</h2>
                     </div>
                 </div>
-                <p class="text-sm text-slate-500 mb-4">
-                    セルをクリックして個人の予定（当番不可、日直など）を選択してください。変更は<span class="text-emerald-600 font-bold">自動的にクラウドへ保存・同期</span>されます。<br>
-                    <span class="text-indigo-600 font-medium">※平日は「救急日直」「ICU日直」「管理日直」「昼当番不可」「夜当番不可」を選択できません。</span>
+                <p class="text-xs sm:text-sm text-slate-500 mb-4">
+                    セルをクリックして予定を選択してください。変更は<span class="text-indigo-600 font-bold">自動的にクラウドへ保存・同期</span>されます。
                 </p>
                 <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-[60vh] relative shadow-inner bg-white">
-                    <table class="w-full text-xs text-center border-collapse min-w-max">
+                    <table class="w-full text-[10px] sm:text-xs text-center border-collapse min-w-max">
                         <thead>
-                            <tr id="unavail-thead" class="text-slate-600 uppercase tracking-wider"></tr>
+                            <tr id="unavail-thead" class="text-slate-600 uppercase tracking-wider">
+                                <!-- JSで描画 -->
+                            </tr>
                         </thead>
-                        <tbody id="unavail-tbody"></tbody>
+                        <tbody id="unavail-tbody">
+                            <!-- JSで描画 -->
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
         <!-- タブ: 医師設定 -->
-        <div id="tab-doctors" class="tab-content hidden space-y-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div id="tab-doctors" class="tab-content hidden space-y-4 sm:space-y-6">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex items-center gap-2 mb-4">
                     <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    <h2 class="font-bold text-lg text-slate-800">医師名簿の管理</h2>
+                    <h2 class="font-bold text-base sm:text-lg text-slate-800">医師名簿の管理</h2>
                 </div>
-                <p class="text-sm text-slate-500 mb-6">医師の追加・削除、役割、月間の上限回数を設定します。ここでの変更は全月に適用され、<span class="text-emerald-600 font-bold">リアルタイムで同期</span>されます。</p>
+                <p class="text-xs sm:text-sm text-slate-500 mb-6">ここでの変更は全月に適用され、リアルタイムで同期されます。</p>
                 
                 <!-- 新規追加フォーム -->
-                <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
+                <div class="bg-slate-50/80 p-4 sm:p-5 rounded-xl border border-slate-200 mb-6 sm:mb-8 flex flex-col md:flex-row gap-3 sm:gap-4 items-end shadow-sm">
                     <div class="flex-1 w-full">
-                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">氏名</label>
-                        <input type="text" id="new-doc-name" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 focus:outline-none transition-all shadow-sm" placeholder="例: 山田太郎">
+                        <label class="block text-[10px] sm:text-xs font-bold text-slate-600 mb-1 sm:mb-1.5 uppercase tracking-wider">氏名</label>
+                        <input type="text" id="new-doc-name" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none transition-all shadow-sm" placeholder="例: 山田太郎">
                     </div>
                     <div class="flex-1 w-full">
-                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">役割</label>
-                        <select id="new-doc-type" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 focus:outline-none transition-all shadow-sm bg-white">
+                        <label class="block text-[10px] sm:text-xs font-bold text-slate-600 mb-1 sm:mb-1.5 uppercase tracking-wider">役割</label>
+                        <select id="new-doc-type" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none transition-all shadow-sm bg-white">
                             <option value="solo_backup">単独・Backup可</option>
                             <option value="needs_backup">要Backup</option>
                             <option value="backup_only">Backupのみ</option>
                         </select>
                     </div>
-                    <button id="btn-add-doctor" class="w-full md:w-auto px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <button onclick="addDoctor()" class="w-full md:w-auto px-6 py-2.5 sm:py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
                         名簿に追加
                     </button>
                 </div>
 
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                    <table class="w-full text-sm text-left border-collapse">
-                        <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider text-xs border-b border-slate-200">
+                    <table class="w-full text-xs sm:text-sm text-left border-collapse min-w-[500px]">
+                        <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] sm:text-xs border-b border-slate-200">
                             <tr>
-                                <th class="py-3 px-5 font-semibold">氏名</th>
-                                <th class="py-3 px-5 font-semibold">役割</th>
-                                <th class="py-3 px-5 text-center font-semibold">1st Call上限</th>
-                                <th class="py-3 px-5 text-center font-semibold">Back up上限</th>
-                                <th class="py-3 px-5 text-center w-24 font-semibold">操作</th>
+                                <th class="py-2 sm:py-3 px-3 sm:px-5 font-semibold">氏名</th>
+                                <th class="py-2 sm:py-3 px-3 sm:px-5 font-semibold">役割</th>
+                                <th class="py-2 sm:py-3 px-2 sm:px-5 text-center font-semibold">1st 上限</th>
+                                <th class="py-2 sm:py-3 px-2 sm:px-5 text-center font-semibold">Backup 上限</th>
+                                <th class="py-2 sm:py-3 px-3 sm:px-5 text-center w-16 sm:w-24 font-semibold">操作</th>
                             </tr>
                         </thead>
                         <tbody id="doctors-tbody" class="divide-y divide-slate-100">
@@ -208,33 +264,12 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // 提供された Firebase の設定
-        const firebaseConfig = {
-            apiKey: "AIzaSyDPnNvsBesof9ZguJ_p37qaVTlwoYeZPN8",
-            authDomain: "tmpu-gastro-qqcall.firebaseapp.com",
-            projectId: "tmpu-gastro-qqcall",
-            storageBucket: "tmpu-gastro-qqcall.firebasestorage.app",
-            messagingSenderId: "466411946448",
-            appId: "1:466411946448:web:b43063eafaeb6545aab9d5"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        // パス生成用のappId
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'gastro-schedule-app';
-
+    <script>
         // --- データ定義 ---
         const DOCTOR_TYPES = {
-            SOLO_BACKUP: 'solo_backup',
-            NEEDS_BACKUP: 'needs_backup',
-            BACKUP_ONLY: 'backup_only'
+            SOLO_BACKUP: 'solo_backup', 
+            NEEDS_BACKUP: 'needs_backup', 
+            BACKUP_ONLY: 'backup_only' 
         };
 
         const REASONS = [
@@ -275,8 +310,8 @@
         ];
 
         let doctors = [];
-        let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth() + 1;
+        let currentYear = 2026;
+        let currentMonth = 9; 
         let daysInMonth = 30;
         
         let customHolidays = []; 
@@ -288,13 +323,16 @@
         let unsubscribeMonth = null;
         let unsubscribeDoctors = null;
 
-        function getDaysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
-        
-        function getDayOfWeek(year, month, day) { 
-            const d = new Date(year, month - 1, day); 
-            return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; 
+        // --- ユーティリティ ---
+        function getDaysInMonth(year, month) {
+            return new Date(year, month, 0).getDate();
         }
-        
+
+        function getDayOfWeek(year, month, day) {
+            const d = new Date(year, month - 1, day);
+            return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()];
+        }
+
         function isHolidayDay(day) {
             const d = new Date(currentYear, currentMonth - 1, day);
             const dow = d.getDay();
@@ -303,55 +341,63 @@
             if (customHolidays.includes(day)) return true;
             return false;
         }
-        
+
         function getTypeLabel(type) {
-            if (type === DOCTOR_TYPES.SOLO_BACKUP) return '<span class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium border border-indigo-100">単独・Backup可</span>';
-            if (type === DOCTOR_TYPES.NEEDS_BACKUP) return '<span class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-100">要Backup</span>';
-            if (type === DOCTOR_TYPES.BACKUP_ONLY) return '<span class="px-2 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium border border-amber-100">Backupのみ</span>';
+            if (type === DOCTOR_TYPES.SOLO_BACKUP) return '<span class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-[10px] sm:text-xs font-medium border border-indigo-100 whitespace-nowrap">単独・Backup可</span>';
+            if (type === DOCTOR_TYPES.NEEDS_BACKUP) return '<span class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-md text-[10px] sm:text-xs font-medium border border-emerald-100 whitespace-nowrap">要Backup</span>';
+            if (type === DOCTOR_TYPES.BACKUP_ONLY) return '<span class="px-2 py-1 bg-amber-50 text-amber-700 rounded-md text-[10px] sm:text-xs font-medium border border-amber-100 whitespace-nowrap">Backupのみ</span>';
             return '';
         }
-        
+
         function getDefaultLimits(type) {
             return {
                 shift: (type === DOCTOR_TYPES.BACKUP_ONLY) ? 0 : 4,
                 backup: (type === DOCTOR_TYPES.NEEDS_BACKUP) ? 0 : 4,
             };
         }
-        
+
         function showMessage(msg, isError = false) {
             const container = document.getElementById('toast-container');
             const messageEl = document.getElementById('toast-message');
             const iconEl = document.getElementById('toast-icon');
+
             clearTimeout(toastTimeout);
             messageEl.innerHTML = msg;
             
             if (isError) {
-                container.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 flex items-center shadow-lg rounded-full px-6 py-3 font-medium text-sm backdrop-blur-md bg-rose-50 text-rose-700 border border-rose-200 toast-enter';
-                iconEl.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                container.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 flex items-center shadow-lg rounded-full px-4 sm:px-6 py-2.5 sm:py-3 font-medium text-xs sm:text-sm backdrop-blur-md bg-rose-50 text-rose-700 border border-rose-200 toast-enter w-11/12 max-w-md';
+                iconEl.innerHTML = '<svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
             } else {
-                container.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 flex items-center shadow-lg rounded-full px-6 py-3 font-medium text-sm backdrop-blur-md bg-emerald-50 text-emerald-800 border border-emerald-200 toast-enter';
-                iconEl.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                container.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 flex items-center shadow-lg rounded-full px-4 sm:px-6 py-2.5 sm:py-3 font-medium text-xs sm:text-sm backdrop-blur-md bg-emerald-50 text-emerald-800 border border-emerald-200 toast-enter w-11/12 max-w-md';
+                iconEl.innerHTML = '<svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
             }
+
             toastTimeout = setTimeout(() => {
                 container.classList.remove('toast-enter');
                 container.classList.add('toast-leave');
             }, 6000);
         }
         
-        function generateId() { return 'doc_' + Math.random().toString(36).substr(2, 9); }
+        function generateId() {
+            return 'doc_' + Math.random().toString(36).substr(2, 9);
+        }
 
+        // ==========================================
+        // ★ Firebase 連携用関数
+        // ==========================================
         function saveDoctors() {
-            if (!auth.currentUser) return;
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'doctors');
-            setDoc(docRef, { list: doctors }).catch(err => console.error("Error saving doctors:", err));
+            if(!window.firebaseSetDoc) return;
+            const docRef = window.firebaseDoc(window.firebaseDb, 'settings', 'doctors');
+            window.firebaseSetDoc(docRef, { list: doctors })
+                .catch(err => console.error("Error saving doctors:", err));
         }
 
         function listenDoctors() {
-            if (!auth.currentUser) return;
+            if(!window.firebaseOnSnapshot) return;
             if (unsubscribeDoctors) unsubscribeDoctors();
             
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'doctors');
-            unsubscribeDoctors = onSnapshot(docRef, (docSnap) => {
+            const docRef = window.firebaseDoc(window.firebaseDb, 'settings', 'doctors');
+            unsubscribeDoctors = window.firebaseOnSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     doctors = docSnap.data().list || [];
                     doctors.forEach(d => {
@@ -365,28 +411,37 @@
                 renderDoctorsTable();
                 renderUnavailabilityTable();
                 renderSummary();
-            }, (error) => {
-                console.error("Error listening doctors:", error);
-            });
+            }, err => console.error("Error listening doctors:", err));
         }
 
-        function getMonthDataKey() { return `schedule_${currentYear}_${currentMonth}`; }
+        function getMonthDataKey() {
+            return `schedule_${currentYear}_${currentMonth}`;
+        }
 
         function saveMonthData() {
-            if (!auth.currentUser) return;
-            const data = { unavailability, customHolidays, scheduleData, counts };
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'monthly_schedules', getMonthDataKey());
-            setDoc(docRef, data).catch(err => console.error("Error saving month data:", err));
+            if(!window.firebaseSetDoc) return;
+            const docRef = window.firebaseDoc(window.firebaseDb, 'monthly_schedules', getMonthDataKey());
+            const data = {
+                unavailability,
+                customHolidays,
+                scheduleData,
+                counts
+            };
+            window.firebaseSetDoc(docRef, data)
+                .catch(err => console.error("Error saving month data:", err));
         }
 
         function listenMonthData() {
-            if (!auth.currentUser) return;
+            if(!window.firebaseOnSnapshot) return;
             if (unsubscribeMonth) unsubscribeMonth();
             
-            unavailability = {}; customHolidays = []; scheduleData = {}; counts = {};
+            unavailability = {};
+            customHolidays = [];
+            scheduleData = {};
+            counts = {};
             
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'monthly_schedules', getMonthDataKey());
-            unsubscribeMonth = onSnapshot(docRef, (docSnap) => {
+            const docRef = window.firebaseDoc(window.firebaseDb, 'monthly_schedules', getMonthDataKey());
+            unsubscribeMonth = window.firebaseOnSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     unavailability = data.unavailability || {};
@@ -398,14 +453,16 @@
                 renderUnavailabilityTable();
                 renderCalendar();
                 renderSummary();
-            }, (error) => {
-                console.error("Error listening month data:", error);
-            });
+            }, err => console.error("Error listening month data:", err));
         }
 
-        window.switchTab = function(tabId) {
+        // ==========================================
+
+        // --- UI 操作 ---
+        function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
+            
             document.querySelectorAll('.tab-btn').forEach(el => {
                 el.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
                 el.classList.add('text-slate-500', 'hover:text-slate-700', 'hover:bg-slate-50/50');
@@ -415,39 +472,52 @@
             activeBtn.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
         }
 
-        window.updateMonthDisplayAndData = function() {
+        function updateMonthDisplayAndData() {
             document.getElementById('current-month-display').textContent = `${currentYear}年 ${currentMonth}月`;
+            document.getElementById('reset-btn-text').textContent = `${currentMonth}月をリセット`;
             daysInMonth = getDaysInMonth(currentYear, currentMonth);
-            listenMonthData(); 
+            listenMonthData();
         }
 
-        window.prevMonth = function() {
+        function prevMonth() {
             currentMonth--;
-            if (currentMonth < 1) { currentMonth = 12; currentYear--; }
-            window.updateMonthDisplayAndData();
+            if (currentMonth < 1) {
+                currentMonth = 12;
+                currentYear--;
+            }
+            updateMonthDisplayAndData();
         }
 
-        window.nextMonth = function() {
+        function nextMonth() {
             currentMonth++;
-            if (currentMonth > 12) { currentMonth = 1; currentYear++; }
-            window.updateMonthDisplayAndData();
+            if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear++;
+            }
+            updateMonthDisplayAndData();
         }
         
-        window.toggleCustomHoliday = function(day) {
+        function toggleCustomHoliday(day) {
             const idx = customHolidays.indexOf(day);
-            if (idx > -1) customHolidays.splice(idx, 1);
-            else customHolidays.push(day);
+            if (idx > -1) {
+                customHolidays.splice(idx, 1);
+            } else {
+                customHolidays.push(day);
+            }
             saveMonthData();
         }
 
-        window.updateUnavail = function(docId, day, val) {
+        function updateUnavail(docId, day, val) {
             if (!unavailability[docId]) unavailability[docId] = {};
-            if (val === '') delete unavailability[docId][day];
-            else unavailability[docId][day] = val;
+            if (val === '') {
+                delete unavailability[docId][day];
+            } else {
+                unavailability[docId][day] = val;
+            }
             saveMonthData();
         }
 
-        window.updateDoctorLimit = function(docId, field, val) {
+        function updateDoctorLimit(docId, field, val) {
             const doc = doctors.find(d => d.id === docId);
             if (doc) {
                 doc[field === 'shift' ? 'limitShift' : 'limitBackup'] = parseInt(val, 10) || 0;
@@ -455,11 +525,14 @@
             }
         }
         
-        window.addDoctor = function() {
+        function addDoctor() {
             const nameInput = document.getElementById('new-doc-name');
             const typeInput = document.getElementById('new-doc-type');
             const name = nameInput.value.trim();
-            if (!name) { showMessage("氏名を入力してください", true); return; }
+            if (!name) {
+                showMessage("氏名を入力してください", true);
+                return;
+            }
             
             const newDoc = {
                 id: generateId(),
@@ -468,21 +541,44 @@
                 limitShift: getDefaultLimits(typeInput.value).shift,
                 limitBackup: getDefaultLimits(typeInput.value).backup
             };
+            
             doctors.push(newDoc);
             saveDoctors();
+            
             nameInput.value = '';
             showMessage(`「${name}」を追加しました。`);
         }
         
-        window.removeDoctor = function(docId) {
+        function removeDoctor(docId) {
             const doc = doctors.find(d => d.id === docId);
             if (!doc) return;
-            if (!window.confirm(`「${doc.name}」を削除してもよろしいですか？`)) return;
+            if (!confirm(`「${doc.name}」を削除してもよろしいですか？`)) return;
             
             doctors = doctors.filter(d => d.id !== docId);
             saveDoctors();
+            
             delete unavailability[docId];
             saveMonthData();
+        }
+        
+        // ★ 追加：その月のスケジュールをリセットする機能
+        function resetCurrentMonthSchedule() {
+            if (Object.keys(scheduleData).length === 0) {
+                showMessage('リセットするスケジュールがありません。');
+                return;
+            }
+            
+            if (!confirm(`【警告】\n${currentYear}年${currentMonth}月の「スケジュール割当」をすべて白紙に戻しますか？\n※除外日や休診日設定はそのまま残ります。`)) {
+                return;
+            }
+            
+            // スケジュールデータと集計カウントを初期化
+            scheduleData = {};
+            counts = {};
+            
+            // クラウドへ保存（同期）
+            saveMonthData();
+            showMessage(`${currentYear}年${currentMonth}月のスケジュールをリセットしました。`);
         }
 
         function renderDoctorsTable() {
@@ -491,31 +587,31 @@
             doctors.forEach(doc => {
                 let shiftOptions = '';
                 let backupOptions = '';
-                for(let i=0; i<=8; i++) {
+                for(let i=0; i<=10; i++) {
                     shiftOptions += `<option value="${i}" ${doc.limitShift === i ? 'selected' : ''}>${i}</option>`;
                     backupOptions += `<option value="${i}" ${doc.limitBackup === i ? 'selected' : ''}>${i}</option>`;
                 }
 
                 html += `<tr class="bg-white hover:bg-slate-50/80 transition-colors group">
-                    <td class="border-b border-slate-100 p-3 px-5 font-medium text-slate-700">${doc.name}</td>
-                    <td class="border-b border-slate-100 p-3 px-5">${getTypeLabel(doc.type)}</td>
-                    <td class="border-b border-slate-100 p-3 px-5 text-center">
-                        <select class="border border-slate-200 rounded-md p-1.5 w-16 text-center focus:ring-2 focus:ring-indigo-400 focus:outline-none shadow-sm transition-all text-sm bg-white" 
-                            onchange="window.updateDoctorLimit('${doc.id}', 'shift', this.value)" 
-                            ${doc.type === DOCTOR_TYPES.BACKUP_ONLY ? 'disabled class="bg-slate-50 text-slate-400 border border-slate-200 rounded-md p-1.5 w-16 text-center shadow-none text-sm"' : ''}>
+                    <td class="border-b border-slate-100 py-2 sm:py-3 px-3 sm:px-5 font-medium text-slate-700 whitespace-nowrap">${doc.name}</td>
+                    <td class="border-b border-slate-100 py-2 sm:py-3 px-3 sm:px-5">${getTypeLabel(doc.type)}</td>
+                    <td class="border-b border-slate-100 py-2 sm:py-3 px-2 sm:px-5 text-center">
+                        <select class="border border-slate-200 rounded-md p-1 sm:p-1.5 w-12 sm:w-16 text-center focus:ring-2 focus:ring-indigo-400 focus:outline-none shadow-sm transition-all text-xs sm:text-sm bg-white" 
+                            onchange="updateDoctorLimit('${doc.id}', 'shift', this.value)" 
+                            ${doc.type === DOCTOR_TYPES.BACKUP_ONLY ? 'disabled class="bg-slate-50 text-slate-400 border border-slate-200 rounded-md p-1 sm:p-1.5 w-12 sm:w-16 text-center shadow-none text-xs sm:text-sm"' : ''}>
                             ${shiftOptions}
                         </select>
                     </td>
-                    <td class="border-b border-slate-100 p-3 px-5 text-center">
-                        <select class="border border-slate-200 rounded-md p-1.5 w-16 text-center focus:ring-2 focus:ring-indigo-400 focus:outline-none shadow-sm transition-all text-sm bg-white" 
-                            onchange="window.updateDoctorLimit('${doc.id}', 'backup', this.value)" 
-                            ${doc.type === DOCTOR_TYPES.NEEDS_BACKUP ? 'disabled class="bg-slate-50 text-slate-400 border border-slate-200 rounded-md p-1.5 w-16 text-center shadow-none text-sm"' : ''}>
+                    <td class="border-b border-slate-100 py-2 sm:py-3 px-2 sm:px-5 text-center">
+                        <select class="border border-slate-200 rounded-md p-1 sm:p-1.5 w-12 sm:w-16 text-center focus:ring-2 focus:ring-indigo-400 focus:outline-none shadow-sm transition-all text-xs sm:text-sm bg-white" 
+                            onchange="updateDoctorLimit('${doc.id}', 'backup', this.value)" 
+                            ${doc.type === DOCTOR_TYPES.NEEDS_BACKUP ? 'disabled class="bg-slate-50 text-slate-400 border border-slate-200 rounded-md p-1 sm:p-1.5 w-12 sm:w-16 text-center shadow-none text-xs sm:text-sm"' : ''}>
                             ${backupOptions}
                         </select>
                     </td>
-                    <td class="border-b border-slate-100 p-3 px-5 text-center">
-                        <button onclick="window.removeDoctor('${doc.id}')" class="text-rose-500 hover:text-white hover:bg-rose-500 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" title="削除">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <td class="border-b border-slate-100 py-2 sm:py-3 px-3 sm:px-5 text-center">
+                        <button onclick="removeDoctor('${doc.id}')" class="text-rose-500 hover:text-white hover:bg-rose-500 p-1.5 sm:p-2 rounded-lg transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100" title="削除">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </td>
                 </tr>`;
@@ -548,12 +644,12 @@
                 const isChecked = customHolidays.includes(d);
                 
                 if (isAutoHoliday) {
-                    html += `<label class="inline-flex items-center justify-center bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-full text-xs text-rose-700 opacity-60 cursor-not-allowed font-medium select-none" title="自動的に休日扱いになります (${holidayName})">
+                    html += `<label class="inline-flex items-center justify-center bg-rose-50 border border-rose-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs text-rose-700 opacity-60 cursor-not-allowed font-medium select-none whitespace-nowrap" title="自動的に休日扱いになります (${holidayName})">
                         ${d}日
                     </label>`;
                 } else {
-                    html += `<label class="inline-flex items-center justify-center ${isChecked ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'} border px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all font-medium select-none shadow-sm">
-                        <input type="checkbox" onchange="window.toggleCustomHoliday(${d})" ${isChecked ? 'checked' : ''} class="hidden"> 
+                    html += `<label class="inline-flex items-center justify-center ${isChecked ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'} border px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs cursor-pointer transition-all font-medium select-none shadow-sm whitespace-nowrap">
+                        <input type="checkbox" onchange="toggleCustomHoliday(${d})" ${isChecked ? 'checked' : ''} class="hidden"> 
                         ${d}日
                     </label>`;
                 }
@@ -565,7 +661,7 @@
             const thead = document.getElementById('unavail-thead');
             const tbody = document.getElementById('unavail-tbody');
             
-            let headHtml = `<th class="sticky-cross p-3 w-28 border-b border-r border-slate-200 bg-slate-50 text-left pl-4 font-semibold text-xs">氏名</th>`;
+            let headHtml = `<th class="sticky-cross p-2 sm:p-3 w-20 sm:w-28 border-b border-r border-slate-200 bg-slate-50 text-left pl-2 sm:pl-4 font-semibold text-[10px] sm:text-xs">氏名</th>`;
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateObj = new Date(currentYear, currentMonth - 1, d);
                 const dowNum = dateObj.getDay();
@@ -579,12 +675,13 @@
                 if (customHolidays.includes(d)) isPublicHoliday = true;
                 
                 if (dowNum === 0 || isPublicHoliday) textClass = 'text-rose-600';
+                
                 const bgClass = isHol ? 'bg-rose-50/50' : 'bg-slate-50';
 
-                headHtml += `<th class="sticky-head p-1.5 min-w-[60px] border-b border-r border-slate-200 ${bgClass}">
+                headHtml += `<th class="sticky-head p-1 sm:p-1.5 min-w-[45px] sm:min-w-[60px] border-b border-r border-slate-200 ${bgClass}">
                     <div class="flex flex-col items-center justify-center leading-tight">
-                        <span class="font-bold ${textClass} text-sm">${d}</span>
-                        <span class="text-[10px] font-medium ${textClass} opacity-80">${getDayOfWeek(currentYear, currentMonth, d)}</span>
+                        <span class="font-bold ${textClass} text-xs sm:text-sm">${d}</span>
+                        <span class="text-[9px] sm:text-[10px] font-medium ${textClass} opacity-80">${getDayOfWeek(currentYear, currentMonth, d)}</span>
                     </div>
                 </th>`;
             }
@@ -593,7 +690,7 @@
             let bodyHtml = '';
             doctors.forEach(doc => {
                 bodyHtml += `<tr class="hover:bg-slate-50/50 transition-colors">
-                    <td class="sticky-col p-2 pl-4 border-b border-r border-slate-100 text-left font-medium text-slate-700 bg-white shadow-[1px_0_0_#f1f5f9]">${doc.name}</td>`;
+                    <td class="sticky-col p-1.5 sm:p-2 pl-2 sm:pl-4 border-b border-r border-slate-100 text-left font-medium text-slate-700 bg-white shadow-[1px_0_0_#f1f5f9] whitespace-nowrap text-[10px] sm:text-xs">${doc.name}</td>`;
                 for (let d = 1; d <= daysInMonth; d++) {
                     const isHol = isHolidayDay(d);
                     const val = unavailability[doc.id]?.[d] || '';
@@ -620,8 +717,8 @@
                         }
                     });
 
-                    bodyHtml += `<td class="border-b border-r border-slate-100 p-1 ${cellBg}">
-                        <select class="compact text-[11px] h-full py-1.5 ${textStyle}" onchange="window.updateUnavail('${doc.id}', ${d}, this.value)">
+                    bodyHtml += `<td class="border-b border-r border-slate-100 p-0.5 sm:p-1 ${cellBg}">
+                        <select class="compact text-[9px] sm:text-[11px] h-full py-1 sm:py-1.5 ${textStyle}" onchange="updateUnavail('${doc.id}', ${d}, this.value)">
                             ${options}
                         </select>
                     </td>`;
@@ -652,9 +749,10 @@
                 { label: '土', class: 'text-indigo-600' }
             ];
             
-            html += `<div class="col-span-7 grid grid-cols-7 bg-white">`;
+            // Header
+            html += `<div class="hidden md:contents desktop-only-contents">`;
             dows.forEach(dow => {
-                html += `<div class="text-center py-3 ${dow.class} font-semibold text-xs tracking-widest border-b border-slate-100">${dow.label}</div>`;
+                html += `<div class="text-center py-2 sm:py-3 bg-white ${dow.class} font-semibold text-[10px] sm:text-xs tracking-widest border-b border-slate-100">${dow.label}</div>`;
             });
             html += `</div>`;
 
@@ -662,7 +760,7 @@
             const startDow = firstDay.getDay();
 
             for (let i = 0; i < startDow; i++) {
-                html += `<div class="bg-slate-50/50 min-h-[120px]"></div>`;
+                html += `<div class="hidden md:block desktop-only bg-slate-50/50 min-h-[90px] sm:min-h-[120px]"></div>`;
             }
 
             for (let d = 1; d <= daysInMonth; d++) {
@@ -676,7 +774,7 @@
                     if (hName) holidayName = hName;
                 }
                 if (customHolidays.includes(d)) {
-                    holidayName = holidayName ? holidayName + ' (休診)' : '休診日';
+                    holidayName = holidayName ? holidayName + ' (休)' : '休診日';
                 }
                 
                 const bgClass = isHol ? 'bg-rose-50/30' : 'bg-white';
@@ -687,28 +785,28 @@
                 
                 let shiftHtml = '';
                 if (scheduleData[d]) {
-                    const sunIcon = `<svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
-                    const moonIcon = `<svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`;
+                    const sunIcon = `<svg class="w-3.5 h-3.5 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
+                    const moonIcon = `<svg class="w-3.5 h-3.5 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`;
 
                     if (isHol && scheduleData[d].day) {
                         const sDay = scheduleData[d].day;
                         if (sDay.main === 'ERROR') {
-                            shiftHtml += `<div class="mb-1.5 p-1.5 bg-rose-50 border border-rose-200 rounded-lg text-[11px] text-rose-600 font-bold text-center flex items-center justify-center shadow-sm">${sunIcon} 割当不可</div>`;
+                            shiftHtml += `<div class="mb-1.5 p-1.5 bg-rose-50 border border-rose-200 rounded-lg text-xs md:text-[11px] text-rose-600 font-bold text-center flex items-center justify-center shadow-sm">${sunIcon} 割当不可</div>`;
                         } else {
-                            shiftHtml += `<div class="mb-1.5 p-1.5 bg-amber-50 border border-amber-200/60 rounded-lg shadow-sm">
-                                <div class="flex items-center text-amber-700 font-semibold text-[12px]">${sunIcon} <span class="text-[13px] ml-0.5">${getDoctorNameById(sDay.main)}</span></div>
-                                ${sDay.backup ? `<div class="text-amber-600/80 mt-0.5 text-[10px] ml-4.5 font-medium">B: ${getDoctorNameById(sDay.backup)}</div>` : ''}
+                            shiftHtml += `<div class="mb-1.5 p-2 md:p-1.5 bg-amber-50 border border-amber-200/60 rounded-lg shadow-sm">
+                                <div class="flex items-center text-amber-700 font-semibold text-sm md:text-[12px] whitespace-nowrap overflow-hidden">${sunIcon} <span class="md:text-[13px] ml-0.5 truncate doc-main-name">${getDoctorNameById(sDay.main)}</span></div>
+                                ${sDay.backup ? `<div class="text-amber-600/80 mt-1 md:mt-0.5 text-xs md:text-[10px] ml-5 md:ml-4.5 font-medium truncate doc-backup-name">B: ${getDoctorNameById(sDay.backup)}</div>` : ''}
                             </div>`;
                         }
                     }
                     if (scheduleData[d].night) {
                         const sNight = scheduleData[d].night;
                         if (sNight.main === 'ERROR') {
-                            shiftHtml += `<div class="p-1.5 bg-rose-50 border border-rose-200 rounded-lg text-[11px] text-rose-600 font-bold text-center flex items-center justify-center shadow-sm">${moonIcon} 割当不可</div>`;
+                            shiftHtml += `<div class="p-1.5 bg-rose-50 border border-rose-200 rounded-lg text-xs md:text-[11px] text-rose-600 font-bold text-center flex items-center justify-center shadow-sm">${moonIcon} 割当不可</div>`;
                         } else {
-                            shiftHtml += `<div class="p-1.5 bg-indigo-50 border border-indigo-200/60 rounded-lg shadow-sm">
-                                <div class="flex items-center text-indigo-700 font-semibold text-[12px]">${moonIcon} <span class="text-[13px] ml-0.5">${getDoctorNameById(sNight.main)}</span></div>
-                                ${sNight.backup ? `<div class="text-indigo-600/80 mt-0.5 text-[10px] ml-4.5 font-medium">B: ${getDoctorNameById(sNight.backup)}</div>` : ''}
+                            shiftHtml += `<div class="p-2 md:p-1.5 bg-indigo-50 border border-indigo-200/60 rounded-lg shadow-sm">
+                                <div class="flex items-center text-indigo-700 font-semibold text-sm md:text-[12px] whitespace-nowrap overflow-hidden">${moonIcon} <span class="md:text-[13px] ml-0.5 truncate doc-main-name">${getDoctorNameById(sNight.main)}</span></div>
+                                ${sNight.backup ? `<div class="text-indigo-600/80 mt-1 md:mt-0.5 text-xs md:text-[10px] ml-5 md:ml-4.5 font-medium truncate doc-backup-name">B: ${getDoctorNameById(sNight.backup)}</div>` : ''}
                             </div>`;
                         }
                     }
@@ -732,19 +830,22 @@
                 });
                 
                 if (dailyDuties.length > 0) {
-                    otherDutiesHtml = '<div class="mt-2 flex flex-col gap-1">';
+                    otherDutiesHtml = '<div class="mt-2 flex flex-col gap-1.5 md:gap-1">';
                     dailyDuties.forEach(item => {
-                        otherDutiesHtml += `<div class="text-[10px] ${item.duty.color} ${item.duty.bg} px-1.5 py-0.5 rounded truncate font-medium flex justify-between"><span>${item.duty.short}</span><span>${item.name}</span></div>`;
+                        otherDutiesHtml += `<div class="text-xs md:text-[10px] ${item.duty.color} ${item.duty.bg} px-2 md:px-1.5 py-1 md:py-0.5 rounded truncate font-medium flex justify-between"><span>${item.duty.short}</span><span class="truncate ml-2">${item.name}</span></div>`;
                     });
                     otherDutiesHtml += '</div>';
                 }
                 
-                html += `<div class="${bgClass} p-2 sm:p-3 min-h-[120px] hover:bg-slate-50 transition-colors flex flex-col border border-transparent">
-                    <div class="flex flex-col sm:flex-row justify-between items-start mb-2">
-                        <span class="font-bold ${textClass} text-sm">${d}</span>
-                        ${holidayName ? `<span class="text-[10px] text-rose-500 font-medium text-left sm:text-right max-w-full leading-tight mt-0.5">${holidayName}</span>` : ''}
+                html += `<div class="${bgClass} p-3 md:p-1.5 lg:p-3 min-h-[auto] md:min-h-[120px] hover:bg-slate-50 transition-colors flex flex-col border-b border-slate-200 md:border-transparent overflow-hidden">
+                    <div class="flex flex-row md:flex-col xl:flex-row justify-between items-center md:items-start mb-3 md:mb-2">
+                        <div class="flex items-baseline gap-2 md:gap-0">
+                            <span class="font-bold ${textClass} text-base md:text-sm">${d}</span>
+                            <span class="md:hidden mobile-only text-xs font-bold ${textClass}">${getDayOfWeek(currentYear, currentMonth, d)}</span>
+                        </div>
+                        ${holidayName ? `<span class="text-xs md:text-[10px] text-rose-500 font-medium text-left xl:text-right max-w-full leading-tight truncate md:mt-0.5">${holidayName}</span>` : ''}
                     </div>
-                    <div class="flex-1 flex flex-col justify-end gap-1">
+                    <div class="flex-1 flex flex-col justify-end gap-1.5 md:gap-1 w-full">
                         ${shiftHtml}
                         ${otherDutiesHtml}
                     </div>
@@ -754,7 +855,7 @@
             const lastDay = new Date(currentYear, currentMonth - 1, daysInMonth);
             const endDow = lastDay.getDay();
             for (let i = endDow + 1; i <= 6; i++) {
-                html += `<div class="bg-slate-50/50 min-h-[120px]"></div>`;
+                html += `<div class="hidden md:block desktop-only bg-slate-50/50 min-h-[90px] sm:min-h-[120px]"></div>`;
             }
 
             grid.innerHTML = html;
@@ -773,22 +874,24 @@
                 const total = c.shift + c.backup;
                 
                 html += `<tr class="bg-white hover:bg-slate-50/80 transition-colors">
-                    <td class="border-b border-slate-100 p-3 px-4 font-medium text-slate-700">${doc.name}</td>
-                    <td class="border-b border-slate-100 p-3 px-2 text-center">
-                        <span class="font-bold text-slate-800">${c.shift}</span>
-                        <span class="text-[11px] text-slate-400 font-medium ml-0.5">/ ${doc.limitShift}</span>
+                    <td class="border-b border-slate-100 p-2 sm:p-3 px-3 sm:px-4 font-medium text-slate-700 whitespace-nowrap text-[11px] sm:text-sm">${doc.name}</td>
+                    <td class="border-b border-slate-100 p-2 sm:p-3 px-1.5 sm:px-2 text-center">
+                        <span class="font-bold text-slate-800 text-xs sm:text-sm">${c.shift}</span>
+                        <span class="text-[9px] sm:text-[11px] text-slate-400 font-medium ml-0.5">/ ${doc.limitShift}</span>
                     </td>
-                    <td class="border-b border-slate-100 p-3 px-2 text-center">
-                        <span class="font-bold text-slate-800">${c.backup}</span>
-                        <span class="text-[11px] text-slate-400 font-medium ml-0.5">/ ${doc.limitBackup}</span>
+                    <td class="border-b border-slate-100 p-2 sm:p-3 px-1.5 sm:px-2 text-center">
+                        <span class="font-bold text-slate-800 text-xs sm:text-sm">${c.backup}</span>
+                        <span class="text-[9px] sm:text-[11px] text-slate-400 font-medium ml-0.5">/ ${doc.limitBackup}</span>
                     </td>
-                    <td class="border-b border-slate-100 p-3 px-2 text-center font-bold text-indigo-600 text-[15px]">${total}</td>
+                    <td class="border-b border-slate-100 p-2 sm:p-3 px-1.5 sm:px-2 text-center font-bold text-indigo-600 text-sm sm:text-[15px]">${total}</td>
                 </tr>`;
             });
             tbody.innerHTML = html;
         }
 
+        // --- スケジューリング アルゴリズム ---
         function canAssignLocal(doctor, day, type, isBackup, currentSchedule, currentCounts) {
+            
             if (isBackup) {
                 if (currentCounts[doctor.id].backup >= doctor.limitBackup) return false;
             } else {
@@ -869,6 +972,7 @@
 
                 if (isHol) {
                     let assignedFullDay = false;
+                    
                     let availMainsFull = doctors.filter(d => 
                         canAssignLocal(d, day, 'day', false, currentSchedule, currentCounts) && 
                         canAssignLocal(d, day, 'night', false, currentSchedule, currentCounts) &&
@@ -974,7 +1078,7 @@
             return { schedule: currentSchedule, errors, finalCounts: currentCounts };
         }
 
-        window.generateSchedule = function() {
+        function generateSchedule() {
             const ATTEMPTS = 100;
             let bestSchedule = null;
             let minErrors = Infinity;
@@ -997,26 +1101,11 @@
             if (minErrors > 0) {
                 showMessage(`<b>${minErrors} 枠</b> の割り当てができませんでした。「割当不可」の箇所を確認してください。`, true);
             } else {
-                showMessage('スケジュールの自動生成が完了しました！クラウドに保存されました。');
+                showMessage('スケジュールの自動生成が完了しました！');
             }
         }
 
-        window.resetSchedule = function() {
-            if (!window.confirm(`${currentYear}年${currentMonth}月の生成済みスケジュールをリセットしてもよろしいですか？\n（※除外日や休診日の設定は保持されます）`)) {
-                return;
-            }
-            
-            // スケジュールデータのみをリセット
-            scheduleData = {};
-            counts = {};
-            
-            // クラウドに保存（同期）
-            saveMonthData();
-            
-            showMessage(`${currentMonth}月のスケジュールをリセットしました。`);
-        }
-
-        window.exportToPDF = function() {
+        function exportToPDF() {
             if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
                 showMessage('PDF出力ライブラリが読み込まれていません。ページをリロードしてください。', true);
                 return;
@@ -1029,10 +1118,16 @@
             
             document.getElementById('export-month-display').textContent = `${currentYear}年 ${currentMonth}月`;
             header.classList.remove('hidden');
+
             element.classList.add('pdf-exporting');
 
             setTimeout(() => {
-                html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
+                html2canvas(element, { 
+                    scale: 2, 
+                    useCORS: true, 
+                    backgroundColor: '#ffffff',
+                    windowWidth: 1400 // PDF出力時に仮想的に十分な幅を持たせる
+                }).then(canvas => {
                     const imgData = canvas.toDataURL('image/jpeg', 1.0);
                     const { jsPDF } = window.jspdf;
                     
@@ -1048,6 +1143,7 @@
                     const imgHeight = canvas.height;
                     
                     const ratio = Math.min(availableWidth / imgWidth, availableHeight / imgHeight);
+                    
                     const finalWidth = imgWidth * ratio;
                     const finalHeight = imgHeight * ratio;
                     
@@ -1069,35 +1165,17 @@
             }, 150);
         }
 
-        window.onload = async () => {
-            // イベントリスナーの登録（インラインハンドラではなく、JS側でバインド）
-            document.getElementById('btn-prev-month').addEventListener('click', window.prevMonth);
-            document.getElementById('btn-next-month').addEventListener('click', window.nextMonth);
+        // --- 初期化 ---
+        window.addEventListener('firebase-ready', () => {
+            const today = new Date();
+            currentYear = today.getFullYear();
+            currentMonth = today.getMonth() + 1;
             
-            document.getElementById('btn-tab-schedule').addEventListener('click', () => window.switchTab('tab-schedule'));
-            document.getElementById('btn-tab-settings').addEventListener('click', () => window.switchTab('tab-settings'));
-            document.getElementById('btn-tab-doctors').addEventListener('click', () => window.switchTab('tab-doctors'));
+            listenDoctors();
+            updateMonthDisplayAndData();
             
-            document.getElementById('btn-add-doctor').addEventListener('click', window.addDoctor);
-            
-            document.getElementById('btn-reset-schedule').addEventListener('click', window.resetSchedule);
-            document.getElementById('btn-export-pdf').addEventListener('click', window.exportToPDF);
-            document.getElementById('btn-generate-schedule').addEventListener('click', window.generateSchedule);
-
-            try {
-                // 匿名ログインを使用してFirestoreへのアクセス権を取得
-                await signInAnonymously(auth);
-                
-                // データ読み込みと監視の開始
-                listenDoctors();
-                window.updateMonthDisplayAndData();
-                window.switchTab('tab-schedule');
-                
-            } catch (error) {
-                console.error("Authentication Error:", error);
-                showMessage("データベースへの接続に失敗しました。", true);
-            }
-        };
+            switchTab('tab-schedule');
+        });
 
     </script>
 </body>
