@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>消化器当番スケジュール</title>
+    <title>消化器当番調整アプリ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/japanese-holidays/lib/japanese-holidays.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -97,7 +97,7 @@
                     <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-200">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">消化器当番スケジュール</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">消化器当番調整アプリ</h1>
                 </div>
                 
                 <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
@@ -953,7 +953,7 @@
         }
 
         // ★ 変更：候補者の優先順位付けロジックをスコア方式に変更（0回回避、要Backup優先など）
-        function getCandidateScore(doc, isHolidayShift, isBackup, currentCounts) {
+        function getCandidateScore(doc, day, isHolidayShift, isBackup, currentCounts, currentSchedule) {
             let score = 0;
             const count = isBackup ? currentCounts[doc.id].backup : currentCounts[doc.id].shift;
             const limit = isBackup ? doc.limitBackup : doc.limitShift;
@@ -978,10 +978,24 @@
                 score -= typeShift * 20;
             }
 
+            // ★ 追加：連日勤務・近接勤務のペナルティ（なるべく間隔を空ける）
+            if (day > 1 && currentSchedule[day - 1]) {
+                const prev = currentSchedule[day - 1];
+                const workedPrev = (prev.day && (prev.day.main === doc.id || prev.day.backup === doc.id)) ||
+                                   (prev.night && (prev.night.main === doc.id || prev.night.backup === doc.id));
+                if (workedPrev) score -= 800; // 前日に勤務している場合は強力なペナルティ（連日回避）
+            }
+            if (day > 2 && currentSchedule[day - 2]) {
+                const prev2 = currentSchedule[day - 2];
+                const workedPrev2 = (prev2.day && (prev2.day.main === doc.id || prev2.day.backup === doc.id)) ||
+                                    (prev2.night && (prev2.night.main === doc.id || prev2.night.backup === doc.id));
+                if (workedPrev2) score -= 200; // 前々日に勤務している場合も少しペナルティ
+            }
+
             return score;
         }
 
-        function sortCandidatesLocal(candidates, isHolidayShift, isBackup, currentCounts) {
+        function sortCandidatesLocal(candidates, day, isHolidayShift, isBackup, currentCounts, currentSchedule) {
             let arr = [...candidates];
             // 1. 同点の場合のランダム性を担保するためにシャッフル
             for (let i = arr.length - 1; i > 0; i--) {
@@ -991,8 +1005,8 @@
             
             // 2. スコア計算による降順ソート
             return arr.sort((a, b) => {
-                const scoreA = getCandidateScore(a, isHolidayShift, isBackup, currentCounts);
-                const scoreB = getCandidateScore(b, isHolidayShift, isBackup, currentCounts);
+                const scoreA = getCandidateScore(a, day, isHolidayShift, isBackup, currentCounts, currentSchedule);
+                const scoreB = getCandidateScore(b, day, isHolidayShift, isBackup, currentCounts, currentSchedule);
                 return scoreB - scoreA;
             });
         }
@@ -1028,7 +1042,7 @@
                         canAssignLocal(d, day, 'night', false, currentSchedule, currentCounts) &&
                         (d.limitShift - currentCounts[d.id].shift >= 2)
                     );
-                    availMainsFull = sortCandidatesLocal(availMainsFull, true, false, currentCounts);
+                    availMainsFull = sortCandidatesLocal(availMainsFull, day, true, false, currentCounts, currentSchedule);
 
                     for (let main of availMainsFull) {
                         if (main.type === DOCTOR_TYPES.NEEDS_BACKUP) {
@@ -1038,7 +1052,7 @@
                                 canAssignLocal(d, day, 'night', true, currentSchedule, currentCounts) &&
                                 (d.limitBackup - currentCounts[d.id].backup >= 2)
                             );
-                            availBackupsFull = sortCandidatesLocal(availBackupsFull, true, true, currentCounts);
+                            availBackupsFull = sortCandidatesLocal(availBackupsFull, day, true, true, currentCounts, currentSchedule);
                             
                             if (availBackupsFull.length > 0) {
                                 let backup = availBackupsFull[0];
@@ -1059,13 +1073,13 @@
                     
                     // --- 休日 昼のみの割当 ---
                     let availMainsDay = doctors.filter(d => canAssignLocal(d, day, 'day', false, currentSchedule, currentCounts));
-                    availMainsDay = sortCandidatesLocal(availMainsDay, true, false, currentCounts);
+                    availMainsDay = sortCandidatesLocal(availMainsDay, day, true, false, currentCounts, currentSchedule);
                     let assignedDay = false;
                     // 要Backupの人がバックアップ不在でエラーにならないよう、ループして次の候補を探す
                     for (let main of availMainsDay) {
                         if (main.type === DOCTOR_TYPES.NEEDS_BACKUP) {
                             let availBackupsDay = doctors.filter(d => d.id !== main.id && canAssignLocal(d, day, 'day', true, currentSchedule, currentCounts));
-                            availBackupsDay = sortCandidatesLocal(availBackupsDay, true, true, currentCounts);
+                            availBackupsDay = sortCandidatesLocal(availBackupsDay, day, true, true, currentCounts, currentSchedule);
                             if (availBackupsDay.length > 0) {
                                 assignShift(day, 'day', main, availBackupsDay[0], true);
                                 assignedDay = true;
@@ -1084,12 +1098,12 @@
 
                     // --- 休日 夜のみの割当 ---
                     let availMainsNight = doctors.filter(d => canAssignLocal(d, day, 'night', false, currentSchedule, currentCounts));
-                    availMainsNight = sortCandidatesLocal(availMainsNight, true, false, currentCounts);
+                    availMainsNight = sortCandidatesLocal(availMainsNight, day, true, false, currentCounts, currentSchedule);
                     let assignedNight = false;
                     for (let main of availMainsNight) {
                         if (main.type === DOCTOR_TYPES.NEEDS_BACKUP) {
                             let availBackupsNight = doctors.filter(d => d.id !== main.id && canAssignLocal(d, day, 'night', true, currentSchedule, currentCounts));
-                            availBackupsNight = sortCandidatesLocal(availBackupsNight, true, true, currentCounts);
+                            availBackupsNight = sortCandidatesLocal(availBackupsNight, day, true, true, currentCounts, currentSchedule);
                             if (availBackupsNight.length > 0) {
                                 assignShift(day, 'night', main, availBackupsNight[0], true);
                                 assignedNight = true;
@@ -1109,13 +1123,13 @@
                 } else {
                     // --- 平日 夜のみの割当 ---
                     let availMains = doctors.filter(d => canAssignLocal(d, day, 'night', false, currentSchedule, currentCounts));
-                    availMains = sortCandidatesLocal(availMains, false, false, currentCounts);
+                    availMains = sortCandidatesLocal(availMains, day, false, false, currentCounts, currentSchedule);
                     
                     let assigned = false;
                     for (let main of availMains) {
                         if (main.type === DOCTOR_TYPES.NEEDS_BACKUP) {
                             let availBackups = doctors.filter(d => d.id !== main.id && canAssignLocal(d, day, 'night', true, currentSchedule, currentCounts));
-                            availBackups = sortCandidatesLocal(availBackups, false, true, currentCounts);
+                            availBackups = sortCandidatesLocal(availBackups, day, false, true, currentCounts, currentSchedule);
                             
                             if (availBackups.length > 0) {
                                 assignShift(day, 'night', main, availBackups[0], false);
