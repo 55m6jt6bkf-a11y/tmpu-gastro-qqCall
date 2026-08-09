@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>消化器当番調整アプリ</title>
+    <title>消化器当番スケジュール</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/japanese-holidays/lib/japanese-holidays.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -91,14 +91,13 @@
     </div>
 
     <div class="max-w-[1400px] mx-auto space-y-6">
-        <!-- ヘッダー -->
         <header class="flex flex-col xl:flex-row justify-between items-center bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 gap-4">
             <div class="flex flex-col items-center xl:items-start gap-2 w-full xl:w-auto">
                 <div class="flex items-center gap-3">
                     <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-200">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">消化器当番調整アプリ</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">消化器当番スケジュール</h1>
                 </div>
                 
                 <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
@@ -112,7 +111,6 @@
                 </div>
             </div>
 
-            <!-- タブ切り替え -->
             <div class="flex bg-slate-100 p-1 rounded-xl shadow-inner w-full sm:w-auto overflow-x-auto no-scrollbar">
                 <button onclick="switchTab('tab-schedule')" id="btn-tab-schedule" class="tab-btn flex-1 sm:flex-none px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-semibold rounded-lg bg-white text-indigo-700 shadow-sm transition-all whitespace-nowrap">スケジュール</button>
                 <button onclick="switchTab('tab-settings')" id="btn-tab-settings" class="tab-btn flex-1 sm:flex-none px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50/50 transition-all whitespace-nowrap">月間設定</button>
@@ -120,9 +118,7 @@
             </div>
         </header>
 
-        <!-- タブ: スケジュール表示 -->
         <div id="tab-schedule" class="tab-content space-y-4 sm:space-y-6 fade-in">
-            <!-- スマホ画面でボタンが折り返せるように flex-wrap を追加 -->
             <div id="schedule-actions" class="flex flex-wrap justify-end gap-2 sm:gap-3">
                 <button onclick="resetCurrentMonthSchedule()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95 mr-auto">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -145,7 +141,6 @@
                         <h2 class="font-bold text-lg text-slate-800" id="export-month-display"></h2>
                         <span class="text-xs sm:text-sm text-slate-500 font-medium bg-white px-3 py-1 rounded-lg border border-slate-200">消化器当番スケジュール</span>
                     </div>
-                    <!-- スマホ向けにレスポンシブなコンテナに変更 -->
                     <div class="calendar-scroll w-full">
                         <div id="calendar-grid" class="grid grid-cols-1 md:grid-cols-7 bg-slate-100 md:gap-[1px] md:min-w-[900px] lg:min-w-full">
                             <!-- JSで描画 -->
@@ -178,7 +173,6 @@
             </div>
         </div>
 
-        <!-- タブ: 条件設定 -->
         <div id="tab-settings" class="tab-content hidden space-y-4 sm:space-y-6">
             <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex items-center gap-2 mb-2">
@@ -216,7 +210,6 @@
             </div>
         </div>
 
-        <!-- タブ: 医師設定 -->
         <div id="tab-doctors" class="tab-content hidden space-y-4 sm:space-y-6">
             <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex items-center gap-2 mb-4">
@@ -225,7 +218,6 @@
                 </div>
                 <p class="text-xs sm:text-sm text-slate-500 mb-6">ここでの変更は全月に適用され、リアルタイムで同期されます。</p>
                 
-                <!-- 新規追加フォーム -->
                 <div class="bg-slate-50/80 p-4 sm:p-5 rounded-xl border border-slate-200 mb-6 sm:mb-8 flex flex-col md:flex-row gap-3 sm:gap-4 items-end shadow-sm">
                     <div class="flex-1 w-full">
                         <label class="block text-[10px] sm:text-xs font-bold text-slate-600 mb-1 sm:mb-1.5 uppercase tracking-wider">氏名</label>
@@ -265,7 +257,6 @@
     </div>
 
     <script>
-        // --- データ定義 ---
         const DOCTOR_TYPES = {
             SOLO_BACKUP: 'solo_backup', 
             NEEDS_BACKUP: 'needs_backup', 
@@ -323,7 +314,6 @@
         let unsubscribeMonth = null;
         let unsubscribeDoctors = null;
 
-        // --- ユーティリティ ---
         function getDaysInMonth(year, month) {
             return new Date(year, month, 0).getDate();
         }
@@ -382,9 +372,6 @@
             return 'doc_' + Math.random().toString(36).substr(2, 9);
         }
 
-        // ==========================================
-        // ★ Firebase 連携用関数
-        // ==========================================
         function saveDoctors() {
             if(!window.firebaseSetDoc) return;
             const docRef = window.firebaseDoc(window.firebaseDb, 'settings', 'doctors');
@@ -456,9 +443,6 @@
             }, err => console.error("Error listening month data:", err));
         }
 
-        // ==========================================
-
-        // --- UI 操作 ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
@@ -561,7 +545,6 @@
             saveMonthData();
         }
         
-        // ★ 追加：その月のスケジュールをリセットする機能
         function resetCurrentMonthSchedule() {
             if (Object.keys(scheduleData).length === 0) {
                 showMessage('リセットするスケジュールがありません。');
@@ -572,11 +555,9 @@
                 return;
             }
             
-            // スケジュールデータと集計カウントを初期化
             scheduleData = {};
             counts = {};
             
-            // クラウドへ保存（同期）
             saveMonthData();
             showMessage(`${currentYear}年${currentMonth}月のスケジュールをリセットしました。`);
         }
@@ -889,7 +870,6 @@
             tbody.innerHTML = html;
         }
 
-        // --- スケジューリング アルゴリズム ---
         function canAssignLocal(doctor, day, type, isBackup, currentSchedule, currentCounts) {
             
             if (isBackup) {
@@ -933,6 +913,13 @@
                 [arr[i], arr[j]] = [arr[j], arr[i]];
             }
             return arr.sort((a, b) => {
+                // 要Backupを1st Callとして最優先でアサインするための処理
+                if (!isBackup) {
+                    const aNeeds = a.type === DOCTOR_TYPES.NEEDS_BACKUP ? 1 : 0;
+                    const bNeeds = b.type === DOCTOR_TYPES.NEEDS_BACKUP ? 1 : 0;
+                    if (aNeeds !== bNeeds) return bNeeds - aNeeds; // 1(要Backup)を前へ
+                }
+
                 const aRemain = isBackup ? (a.limitBackup - currentCounts[a.id].backup) : (a.limitShift - currentCounts[a.id].shift);
                 const bRemain = isBackup ? (b.limitBackup - currentCounts[b.id].backup) : (b.limitShift - currentCounts[b.id].shift);
                 
@@ -1007,68 +994,78 @@
 
                     if (assignedFullDay) continue;
                     
+                    // --- 休日 昼のみの割当 ---
                     let availMainsDay = doctors.filter(d => canAssignLocal(d, day, 'day', false, currentSchedule, currentCounts));
                     availMainsDay = sortCandidatesLocal(availMainsDay, true, false, currentCounts);
-                    if (availMainsDay.length > 0) {
-                        let main = availMainsDay[0];
+                    let assignedDay = false;
+                    // 要Backupの人がバックアップ不在でエラーにならないよう、ループして次の候補を探す
+                    for (let main of availMainsDay) {
                         if (main.type === DOCTOR_TYPES.NEEDS_BACKUP) {
                             let availBackupsDay = doctors.filter(d => d.id !== main.id && canAssignLocal(d, day, 'day', true, currentSchedule, currentCounts));
                             availBackupsDay = sortCandidatesLocal(availBackupsDay, true, true, currentCounts);
                             if (availBackupsDay.length > 0) {
                                 assignShift(day, 'day', main, availBackupsDay[0], true);
-                            } else {
-                                currentSchedule[day]['day'] = { main: 'ERROR', backup: null };
-                                errors++;
+                                assignedDay = true;
+                                break;
                             }
                         } else {
                             assignShift(day, 'day', main, null, true);
+                            assignedDay = true;
+                            break;
                         }
-                    } else {
+                    }
+                    if (!assignedDay) {
                         currentSchedule[day]['day'] = { main: 'ERROR', backup: null };
                         errors++;
                     }
 
+                    // --- 休日 夜のみの割当 ---
                     let availMainsNight = doctors.filter(d => canAssignLocal(d, day, 'night', false, currentSchedule, currentCounts));
                     availMainsNight = sortCandidatesLocal(availMainsNight, true, false, currentCounts);
-                    if (availMainsNight.length > 0) {
-                        let main = availMainsNight[0];
+                    let assignedNight = false;
+                    for (let main of availMainsNight) {
                         if (main.type === DOCTOR_TYPES.NEEDS_BACKUP) {
                             let availBackupsNight = doctors.filter(d => d.id !== main.id && canAssignLocal(d, day, 'night', true, currentSchedule, currentCounts));
                             availBackupsNight = sortCandidatesLocal(availBackupsNight, true, true, currentCounts);
                             if (availBackupsNight.length > 0) {
                                 assignShift(day, 'night', main, availBackupsNight[0], true);
-                            } else {
-                                currentSchedule[day]['night'] = { main: 'ERROR', backup: null };
-                                errors++;
+                                assignedNight = true;
+                                break;
                             }
                         } else {
                             assignShift(day, 'night', main, null, true);
+                            assignedNight = true;
+                            break;
                         }
-                    } else {
+                    }
+                    if (!assignedNight) {
                         currentSchedule[day]['night'] = { main: 'ERROR', backup: null };
                         errors++;
                     }
 
                 } else {
+                    // --- 平日 夜のみの割当 ---
                     let availMains = doctors.filter(d => canAssignLocal(d, day, 'night', false, currentSchedule, currentCounts));
                     availMains = sortCandidatesLocal(availMains, false, false, currentCounts);
                     
-                    if (availMains.length > 0) {
-                        let main = availMains[0];
+                    let assigned = false;
+                    for (let main of availMains) {
                         if (main.type === DOCTOR_TYPES.NEEDS_BACKUP) {
                             let availBackups = doctors.filter(d => d.id !== main.id && canAssignLocal(d, day, 'night', true, currentSchedule, currentCounts));
                             availBackups = sortCandidatesLocal(availBackups, false, true, currentCounts);
                             
                             if (availBackups.length > 0) {
                                 assignShift(day, 'night', main, availBackups[0], false);
-                            } else {
-                                currentSchedule[day]['night'] = { main: 'ERROR', backup: null };
-                                errors++;
+                                assigned = true;
+                                break;
                             }
                         } else {
                             assignShift(day, 'night', main, null, false);
+                            assigned = true;
+                            break;
                         }
-                    } else {
+                    }
+                    if (!assigned) {
                         currentSchedule[day]['night'] = { main: 'ERROR', backup: null };
                         errors++;
                     }
