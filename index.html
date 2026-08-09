@@ -1335,7 +1335,14 @@
         window.addEventListener('firebase-ready', () => {
             const today = new Date();
             currentYear = today.getFullYear();
-            currentMonth = today.getMonth() + 1;
+            
+            // 翌月を設定
+            let nextMonth = today.getMonth() + 2; 
+            if (nextMonth > 12) {
+                nextMonth -= 12;
+                currentYear++;
+            }
+            currentMonth = nextMonth;
             
             listenDoctors();
             updateMonthDisplayAndData();
