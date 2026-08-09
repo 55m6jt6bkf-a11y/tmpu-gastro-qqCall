@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>消化器当番調整アプリ</title>
+    <title>消化器当番スケジュール</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/japanese-holidays/lib/japanese-holidays.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -98,7 +98,7 @@
                     <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-200">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">消化器当番調整アプリ</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">消化器当番スケジュール</h1>
                 </div>
                 
                 <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
@@ -748,23 +748,35 @@
             thead.innerHTML = headHtml;
 
             let bodyHtml = '';
-            doctors.forEach(doc => {
-                bodyHtml += `<tr class="hover:bg-slate-50/50 transition-colors">
-                    <td class="sticky-col p-1.5 sm:p-2 pl-2 sm:pl-4 border-b border-r border-slate-100 text-left font-medium text-slate-700 bg-white shadow-[1px_0_0_#f1f5f9] whitespace-nowrap text-[10px] sm:text-xs">${doc.name}</td>`;
+            doctors.forEach((doc, index) => {
+                // 1行ごとに背景色を変えるための判定（偶数行か奇数行か）
+                const isEven = index % 2 === 0;
+                const rowBaseBg = isEven ? 'bg-white' : 'bg-slate-100/60';
+
+                bodyHtml += `<tr class="hover:bg-slate-200/50 transition-colors">
+                    <td class="sticky-col p-1.5 sm:p-2 pl-2 sm:pl-4 border-b border-r border-slate-200 text-left font-medium text-slate-700 ${rowBaseBg} shadow-[1px_0_0_#f1f5f9] whitespace-nowrap text-[10px] sm:text-xs">${doc.name}</td>`;
                 for (let d = 1; d <= daysInMonth; d++) {
                     const isHol = isHolidayDay(d);
                     const val = unavailability[doc.id]?.[d] || '';
                     
-                    let cellBg = isHol ? 'bg-rose-50/20' : 'bg-white';
+                    // 背景色の設定（偶奇と休日の組み合わせ）
+                    let cellBg = '';
+                    if (isHol) {
+                        cellBg = isEven ? 'bg-rose-50/30' : 'bg-rose-50/80';
+                    } else {
+                        cellBg = isEven ? 'bg-white' : 'bg-slate-100/60';
+                    }
+                    
                     let textStyle = 'text-slate-700';
                     
+                    // 予定が入力されている場合は色を強調して上書きする
                     if (val) {
                         if (['vacation'].includes(val)) {
-                            cellBg = 'bg-rose-50'; textStyle = 'text-rose-700 font-medium';
+                            cellBg = 'bg-rose-100'; textStyle = 'text-rose-700 font-medium';
                         } else if (['unavailable', 'day_unavailable', 'night_unavailable'].includes(val)) {
-                            cellBg = 'bg-amber-50'; textStyle = 'text-amber-700 font-medium';
+                            cellBg = 'bg-amber-100'; textStyle = 'text-amber-700 font-medium';
                         } else {
-                            cellBg = 'bg-indigo-50'; textStyle = 'text-indigo-700 font-medium';
+                            cellBg = 'bg-indigo-100'; textStyle = 'text-indigo-700 font-medium';
                         }
                     }
 
@@ -777,7 +789,7 @@
                         }
                     });
 
-                    bodyHtml += `<td class="border-b border-r border-slate-100 p-0.5 sm:p-1 ${cellBg}">
+                    bodyHtml += `<td class="border-b border-r border-slate-200 p-0.5 sm:p-1 ${cellBg}">
                         <select class="compact text-[9px] sm:text-[11px] h-full py-1 sm:py-1.5 ${textStyle}" onchange="updateUnavail('${doc.id}', ${d}, this.value)">
                             ${options}
                         </select>
