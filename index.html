@@ -753,8 +753,9 @@
                 const isEven = index % 2 === 0;
                 const rowBaseBg = isEven ? 'bg-white' : 'bg-slate-100/60';
 
-                bodyHtml += `<tr class="hover:bg-slate-200/50 transition-colors">
-                    <td class="sticky-col p-1.5 sm:p-2 pl-2 sm:pl-4 border-b border-r border-slate-200 text-left font-medium text-slate-700 ${rowBaseBg} shadow-[1px_0_0_#f1f5f9] whitespace-nowrap text-[10px] sm:text-xs">${doc.name}</td>`;
+                // group クラスを付与し、フォーカス時やホバー時に名前セルをハイライト
+                bodyHtml += `<tr class="hover:bg-slate-200/50 transition-colors group">
+                    <td class="sticky-col p-1.5 sm:p-2 pl-2 sm:pl-4 border-b border-r border-slate-200 text-left font-medium text-slate-700 ${rowBaseBg} group-hover:!bg-slate-200/50 group-focus-within:!bg-indigo-100 group-focus-within:!text-indigo-800 group-focus-within:font-bold shadow-[1px_0_0_#f1f5f9] group-focus-within:shadow-[inset_4px_0_0_#4f46e5,1px_0_0_#f1f5f9] whitespace-nowrap text-[10px] sm:text-xs transition-all duration-200">${doc.name}</td>`;
                 for (let d = 1; d <= daysInMonth; d++) {
                     const isHol = isHolidayDay(d);
                     const val = unavailability[doc.id]?.[d] || '';
@@ -885,13 +886,14 @@
                 }
                 
                 let otherDutiesHtml = '';
+                // 消化器当番(琥珀色/藍色)と混同しないよう、他業務は別の色相(エメラルド、紫、シアン、グレー)を割り当て
                 const dutyMap = {
-                    'er_day': { short: '救日', color: 'text-blue-600', bg: 'bg-blue-50' },
-                    'er_night': { short: '救夜', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                    'icu_day': { short: 'ICU日', color: 'text-teal-600', bg: 'bg-teal-50' },
-                    'icu_night': { short: 'ICU夜', color: 'text-teal-600', bg: 'bg-teal-50' },
-                    'admin_day': { short: '管日', color: 'text-slate-600', bg: 'bg-slate-100' },
-                    'admin_night': { short: '管夜', color: 'text-slate-600', bg: 'bg-slate-100' }
+                    'er_day': { short: '救日', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200/80' },
+                    'er_night': { short: '救夜', color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200/80' },
+                    'icu_day': { short: 'ICU日', color: 'text-cyan-700', bg: 'bg-cyan-50', border: 'border-cyan-200/80' },
+                    'icu_night': { short: 'ICU夜', color: 'text-cyan-700', bg: 'bg-cyan-50', border: 'border-cyan-200/80' },
+                    'admin_day': { short: '管日', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' },
+                    'admin_night': { short: '管夜', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' }
                 };
                 let dailyDuties = [];
                 doctors.forEach(doc => {
@@ -902,9 +904,10 @@
                 });
                 
                 if (dailyDuties.length > 0) {
-                    otherDutiesHtml = '<div class="mt-2 flex flex-col gap-1.5 md:gap-1">';
+                    // 当番枠と少し区切るために上部にマージンと薄い境界線を設ける
+                    otherDutiesHtml = '<div class="mt-2 pt-1.5 border-t border-slate-200/60 flex flex-col gap-1.5 md:gap-1">';
                     dailyDuties.forEach(item => {
-                        otherDutiesHtml += `<div class="text-xs md:text-[10px] ${item.duty.color} ${item.duty.bg} px-2 md:px-1.5 py-1 md:py-0.5 rounded truncate font-medium flex justify-between"><span>${item.duty.short}</span><span class="truncate ml-2">${item.name}</span></div>`;
+                        otherDutiesHtml += `<div class="text-xs md:text-[10px] ${item.duty.color} ${item.duty.bg} border ${item.duty.border} px-2 md:px-1.5 py-1 md:py-0.5 rounded-md truncate font-medium flex justify-between items-center"><span>${item.duty.short}</span><span class="truncate ml-1.5">${item.name}</span></div>`;
                     });
                     otherDutiesHtml += '</div>';
                 }
