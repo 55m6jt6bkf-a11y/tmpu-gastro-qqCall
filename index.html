@@ -12,7 +12,7 @@
     <!-- Firebase SDK (v11 Modular) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         // Firebaseの設定
         const firebaseConfig = {
@@ -32,6 +32,7 @@
         window.firebaseDoc = doc;
         window.firebaseSetDoc = setDoc;
         window.firebaseOnSnapshot = onSnapshot;
+        window.firebaseGetDoc = getDoc;
 
         // Firebase準備完了イベントを発火
         window.dispatchEvent(new Event('firebase-ready'));
@@ -316,6 +317,9 @@
         let scheduleData = {};
         let counts = {};
         
+        let prevMonthScheduleData = {};
+        let prevMonthUnavailability = {};
+
         let toastTimeout;
         let unsubscribeMonth = null;
         let unsubscribeDoctors = null;
@@ -411,6 +415,31 @@
             return `schedule_${currentYear}_${currentMonth}`;
         }
 
+        async function fetchPrevMonthData() {
+            if(!window.firebaseGetDoc || !window.firebaseDb) return;
+            
+            let pYear = currentYear;
+            let pMonth = currentMonth - 1;
+            if (pMonth < 1) {
+                pMonth = 12;
+                pYear--;
+            }
+            const docRef = window.firebaseDoc(window.firebaseDb, 'monthly_schedules', `schedule_${pYear}_${pMonth}`);
+            try {
+                const snap = await window.firebaseGetDoc(docRef);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    prevMonthScheduleData = data.scheduleData || {};
+                    prevMonthUnavailability = data.unavailability || {};
+                } else {
+                    prevMonthScheduleData = {};
+                    prevMonthUnavailability = {};
+                }
+            } catch (e) {
+                console.error("Error fetching prev month data:", e);
+            }
+        }
+
         function saveMonthData() {
             if(!window.firebaseSetDoc) return;
             const docRef = window.firebaseDoc(window.firebaseDb, 'monthly_schedules', getMonthDataKey());
@@ -472,7 +501,11 @@
             if(resetSettingsBtnText) resetSettingsBtnText.textContent = `${currentMonth}月をリセット`;
 
             daysInMonth = getDaysInMonth(currentYear, currentMonth);
-            listenMonthData();
+            
+            // 前月のデータを取得してから今月の監視を開始
+            fetchPrevMonthData().then(() => {
+                listenMonthData();
+            });
         }
 
         function prevMonth() {
@@ -941,11 +974,17 @@
                 if (prevN.main === doctor.id || prevN.backup === doctor.id) return false;
             }
 
-            if (currentSchedule[day]) {
-                const otherType = type === 'day' ? 'night' : 'day';
-                if (currentSchedule[day][otherType]) {
-                    const os = currentSchedule[day][otherType];
-                    if (os.main === doctor.id || os.backup === doctor.id) return false;
+            // 前月末日の当直の反映（当月1日の場合）
+            if (day === 1) {
+                const pYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+                const pMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+                const prevLastDay = getDaysInMonth(pYear, pMonth);
+                
+                if (prevMonthUnavailability[doctor.id]?.[prevLastDay] === 'er_night') return false;
+                
+                if (prevMonthScheduleData[prevLastDay]?.night) {
+                    const prevN = prevMonthScheduleData[prevLastDay].night;
+                    if (prevN.main === doctor.id || prevN.backup === doctor.id) return false;
                 }
             }
 
@@ -978,6 +1017,13 @@
                 score -= typeShift * 20;
             }
 
+            // ★ 追加：「休暇」の前日はなるべく回避する
+            if (day < daysInMonth) {
+                if (unavailability[doc.id]?.[day + 1] === 'vacation') {
+                    score -= 500;
+                }
+            }
+
             // ★ 追加：連日勤務・近接勤務のペナルティ（なるべく間隔を空ける）
             if (day > 1 && currentSchedule[day - 1]) {
                 const prev = currentSchedule[day - 1];
@@ -990,6 +1036,37 @@
                 const workedPrev2 = (prev2.day && (prev2.day.main === doc.id || prev2.day.backup === doc.id)) ||
                                     (prev2.night && (prev2.night.main === doc.id || prev2.night.backup === doc.id));
                 if (workedPrev2) score -= 200; // 前々日に勤務している場合も少しペナルティ
+            }
+
+            // 当月1日・2日の場合、前月からの連日・近接ペナルティを考慮
+            if (day === 1) {
+                const pYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+                const pMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+                const prevLastDay = getDaysInMonth(pYear, pMonth);
+                
+                const prev = prevMonthScheduleData[prevLastDay];
+                if (prev) {
+                    const workedPrev = (prev.day && (prev.day.main === doc.id || prev.day.backup === doc.id)) ||
+                                       (prev.night && (prev.night.main === doc.id || prev.night.backup === doc.id));
+                    if (workedPrev) score -= 800;
+                }
+                const prev2 = prevMonthScheduleData[prevLastDay - 1];
+                if (prev2) {
+                    const workedPrev2 = (prev2.day && (prev2.day.main === doc.id || prev2.day.backup === doc.id)) ||
+                                        (prev2.night && (prev2.night.main === doc.id || prev2.night.backup === doc.id));
+                    if (workedPrev2) score -= 200;
+                }
+            } else if (day === 2) {
+                const pYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+                const pMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+                const prevLastDay = getDaysInMonth(pYear, pMonth);
+                
+                const prev2 = prevMonthScheduleData[prevLastDay];
+                if (prev2) {
+                    const workedPrev2 = (prev2.day && (prev2.day.main === doc.id || prev2.day.backup === doc.id)) ||
+                                        (prev2.night && (prev2.night.main === doc.id || prev2.night.backup === doc.id));
+                    if (workedPrev2) score -= 200;
+                }
             }
 
             return score;
