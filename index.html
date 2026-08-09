@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>消化器当番スケジュール</title>
+    <title>消化器当番調整アプリ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/japanese-holidays/lib/japanese-holidays.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -97,7 +97,7 @@
                     <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-200">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">消化器当番スケジュール</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">消化器当番調整アプリ</h1>
                 </div>
                 
                 <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
@@ -244,7 +244,7 @@
                                 <th class="py-2 sm:py-3 px-3 sm:px-5 font-semibold">役割</th>
                                 <th class="py-2 sm:py-3 px-2 sm:px-5 text-center font-semibold">1st 上限</th>
                                 <th class="py-2 sm:py-3 px-2 sm:px-5 text-center font-semibold">Backup 上限</th>
-                                <th class="py-2 sm:py-3 px-3 sm:px-5 text-center w-16 sm:w-24 font-semibold">操作</th>
+                                <th class="py-2 sm:py-3 px-3 sm:px-5 text-center w-28 sm:w-36 font-semibold">操作</th>
                             </tr>
                         </thead>
                         <tbody id="doctors-tbody" class="divide-y divide-slate-100">
@@ -545,27 +545,28 @@
             saveMonthData();
         }
         
-        function resetCurrentMonthSchedule() {
-            if (Object.keys(scheduleData).length === 0) {
-                showMessage('リセットするスケジュールがありません。');
-                return;
+        // ★ 追加：医師の順番を入れ替える機能
+        function moveDoctor(index, direction) {
+            if (direction === -1 && index > 0) {
+                // 上へ
+                const temp = doctors[index];
+                doctors[index] = doctors[index - 1];
+                doctors[index - 1] = temp;
+                saveDoctors();
+            } else if (direction === 1 && index < doctors.length - 1) {
+                // 下へ
+                const temp = doctors[index];
+                doctors[index] = doctors[index + 1];
+                doctors[index + 1] = temp;
+                saveDoctors();
             }
-            
-            if (!confirm(`【警告】\n${currentYear}年${currentMonth}月の「スケジュール割当」をすべて白紙に戻しますか？\n※除外日や休診日設定はそのまま残ります。`)) {
-                return;
-            }
-            
-            scheduleData = {};
-            counts = {};
-            
-            saveMonthData();
-            showMessage(`${currentYear}年${currentMonth}月のスケジュールをリセットしました。`);
         }
 
+        // ★ 追加：その月のスケジュールをリセットする機能
         function renderDoctorsTable() {
             const tbody = document.getElementById('doctors-tbody');
             let html = '';
-            doctors.forEach(doc => {
+            doctors.forEach((doc, index) => {
                 let shiftOptions = '';
                 let backupOptions = '';
                 for(let i=0; i<=10; i++) {
@@ -590,8 +591,14 @@
                             ${backupOptions}
                         </select>
                     </td>
-                    <td class="border-b border-slate-100 py-2 sm:py-3 px-3 sm:px-5 text-center">
-                        <button onclick="removeDoctor('${doc.id}')" class="text-rose-500 hover:text-white hover:bg-rose-500 p-1.5 sm:p-2 rounded-lg transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100" title="削除">
+                    <td class="border-b border-slate-100 py-2 sm:py-3 px-3 sm:px-5 text-center whitespace-nowrap flex items-center justify-center gap-1">
+                        <button onclick="moveDoctor(${index}, -1)" class="text-slate-400 hover:text-indigo-600 p-1 sm:p-1.5 rounded-lg transition-all ${index === 0 ? 'opacity-0 pointer-events-none' : ''}" title="上へ">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                        </button>
+                        <button onclick="moveDoctor(${index}, 1)" class="text-slate-400 hover:text-indigo-600 p-1 sm:p-1.5 rounded-lg transition-all ${index === doctors.length - 1 ? 'opacity-0 pointer-events-none' : ''}" title="下へ">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <button onclick="removeDoctor('${doc.id}')" class="text-rose-400 hover:text-white hover:bg-rose-500 p-1.5 sm:p-2 rounded-lg transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100 ml-1" title="削除">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </td>
@@ -906,31 +913,48 @@
             return true;
         }
 
+        // ★ 変更：候補者の優先順位付けロジックをスコア方式に変更（0回回避、要Backup優先など）
+        function getCandidateScore(doc, isHolidayShift, isBackup, currentCounts) {
+            let score = 0;
+            const count = isBackup ? currentCounts[doc.id].backup : currentCounts[doc.id].shift;
+            const limit = isBackup ? doc.limitBackup : doc.limitShift;
+            const remain = limit - count;
+
+            // 基本点：残りの割り当て可能枠が多いほど優先 (10 ~ 100点)
+            score += remain * 10;
+
+            // 特典1：上限が1以上設定されているのに、まだ1度も割り当てられていない人を強力に優先
+            if (limit > 0 && count === 0) {
+                score += 1000; 
+            }
+
+            if (!isBackup) {
+                // 特典2：1st Callの場合、要Backupの人を優先 (上限未達による割り当て不能を防ぎつつ優先)
+                if (doc.type === DOCTOR_TYPES.NEEDS_BACKUP) {
+                    score += 500;
+                }
+
+                // 調整：同じ種類のシフト（休日/平日）ばかりに偏らないようにする
+                const typeShift = isHolidayShift ? currentCounts[doc.id].holidayShift : currentCounts[doc.id].weekdayShift;
+                score -= typeShift * 20;
+            }
+
+            return score;
+        }
+
         function sortCandidatesLocal(candidates, isHolidayShift, isBackup, currentCounts) {
             let arr = [...candidates];
+            // 1. 同点の場合のランダム性を担保するためにシャッフル
             for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [arr[i], arr[j]] = [arr[j], arr[i]];
             }
+            
+            // 2. スコア計算による降順ソート
             return arr.sort((a, b) => {
-                // 要Backupを1st Callとして最優先でアサインするための処理
-                if (!isBackup) {
-                    const aNeeds = a.type === DOCTOR_TYPES.NEEDS_BACKUP ? 1 : 0;
-                    const bNeeds = b.type === DOCTOR_TYPES.NEEDS_BACKUP ? 1 : 0;
-                    if (aNeeds !== bNeeds) return bNeeds - aNeeds; // 1(要Backup)を前へ
-                }
-
-                const aRemain = isBackup ? (a.limitBackup - currentCounts[a.id].backup) : (a.limitShift - currentCounts[a.id].shift);
-                const bRemain = isBackup ? (b.limitBackup - currentCounts[b.id].backup) : (b.limitShift - currentCounts[b.id].shift);
-                
-                if (aRemain !== bRemain) return bRemain - aRemain;
-
-                if (!isBackup) {
-                    const aTypeShift = isHolidayShift ? currentCounts[a.id].holidayShift : currentCounts[a.id].weekdayShift;
-                    const bTypeShift = isHolidayShift ? currentCounts[b.id].holidayShift : currentCounts[b.id].weekdayShift;
-                    return aTypeShift - bTypeShift;
-                }
-                return 0;
+                const scoreA = getCandidateScore(a, isHolidayShift, isBackup, currentCounts);
+                const scoreB = getCandidateScore(b, isHolidayShift, isBackup, currentCounts);
+                return scoreB - scoreA;
             });
         }
 
