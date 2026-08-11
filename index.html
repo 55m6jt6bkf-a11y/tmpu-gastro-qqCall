@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>消化器当番調整アプリ</title>
+    <title>消化器当番調整アaプリ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/japanese-holidays/lib/japanese-holidays.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -360,6 +360,8 @@
             { val: 'icu_night', label: 'ICU当直' },
             { val: 'admin_day', label: '管理日直' },
             { val: 'admin_night', label: '管理当直' },
+            { val: 'wakabayashi_day', label: '若林病院日直' },
+            { val: 'wakabayashi_night', label: '若林病院当直' },
             { val: 'unavailable', label: '当番不可' },
             { val: 'day_unavailable', label: '昼当番不可' },
             { val: 'night_unavailable', label: '夜当番不可' }
@@ -886,7 +888,7 @@
 
                     let options = '';
                     REASONS.forEach(r => {
-                        if (!isHol && ['day_unavailable', 'night_unavailable', 'er_day', 'icu_day', 'admin_day'].includes(r.val)) {
+                        if (!isHol && ['day_unavailable', 'night_unavailable', 'er_day', 'icu_day', 'admin_day', 'wakabayashi_day'].includes(r.val)) {
                             options += `<option value="${r.val}" disabled class="text-slate-300 bg-slate-50">${r.label}</option>`;
                         } else {
                             options += `<option value="${r.val}" ${val === r.val ? 'selected' : ''} class="text-slate-700">${r.label}</option>`;
@@ -991,7 +993,9 @@
                     'icu_day': { short: 'ICU日', color: 'text-cyan-700', bg: 'bg-cyan-50', border: 'border-cyan-200/80' },
                     'icu_night': { short: 'ICU夜', color: 'text-cyan-700', bg: 'bg-cyan-50', border: 'border-cyan-200/80' },
                     'admin_day': { short: '管日', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' },
-                    'admin_night': { short: '管夜', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' }
+                    'admin_night': { short: '管夜', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' },
+                    'wakabayashi_day': { short: '若日', color: 'text-fuchsia-700', bg: 'bg-fuchsia-50', border: 'border-fuchsia-200/80' },
+                    'wakabayashi_night': { short: '若夜', color: 'text-fuchsia-700', bg: 'bg-fuchsia-50', border: 'border-fuchsia-200/80' }
                 };
                 let dailyDuties = [];
                 doctors.forEach(doc => {
@@ -1069,7 +1073,7 @@
 
             const reason = unavailability[doc.id]?.[day];
             if (reason) {
-                if (['er_day', 'vacation', 'icu_day', 'icu_night', 'admin_day', 'admin_night', 'unavailable', 'er_night'].includes(reason)) return false;
+                if (['er_day', 'vacation', 'icu_day', 'icu_night', 'admin_day', 'admin_night', 'wakabayashi_day', 'wakabayashi_night', 'unavailable', 'er_night'].includes(reason)) return false;
                 if (reason === 'day_unavailable' && shiftType === 'day') return false;
                 if (reason === 'night_unavailable' && shiftType === 'night') return false;
             }
@@ -1377,7 +1381,7 @@
 
             const reason = unavailability[doctor.id]?.[day];
             if (reason) {
-                if (['er_day', 'vacation', 'icu_day', 'icu_night', 'admin_day', 'admin_night', 'unavailable'].includes(reason)) return false;
+                if (['er_day', 'vacation', 'icu_day', 'icu_night', 'admin_day', 'admin_night', 'wakabayashi_day', 'wakabayashi_night', 'unavailable'].includes(reason)) return false;
                 if (reason === 'er_night') return false;
                 if (reason === 'day_unavailable' && type === 'day') return false;
                 if (reason === 'night_unavailable' && type === 'night') return false;
