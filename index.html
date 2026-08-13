@@ -353,6 +353,7 @@
 
         const REASONS = [
             { val: '', label: '-' },
+            { val: 'preferred', label: '⭐ 当番希望' },
             { val: 'er_night', label: '救急当直' },
             { val: 'er_day', label: '救急日直' },
             { val: 'vacation', label: '休暇' },
@@ -881,6 +882,8 @@
                             cellBg = 'bg-rose-100'; textStyle = 'text-rose-700 font-medium';
                         } else if (['unavailable', 'day_unavailable', 'night_unavailable'].includes(val)) {
                             cellBg = 'bg-amber-100'; textStyle = 'text-amber-700 font-medium';
+                        } else if (val === 'preferred') {
+                            cellBg = 'bg-sky-100'; textStyle = 'text-sky-700 font-bold';
                         } else {
                             cellBg = 'bg-indigo-100'; textStyle = 'text-indigo-700 font-medium';
                         }
@@ -1368,7 +1371,7 @@
             showMessage("日程を交換しました");
         }
 
-        // --- 自動生成ロジック (一部修正) ---
+        // --- 自動生成ロジック ---
         function canAssignLocal(doctor, day, type, isBackup, currentSchedule, currentCounts) {
             if (isBackup) {
                 if (currentCounts[doctor.id].backup >= doctor.limitBackup) return false;
@@ -1385,6 +1388,7 @@
                 if (reason === 'er_night') return false;
                 if (reason === 'day_unavailable' && type === 'day') return false;
                 if (reason === 'night_unavailable' && type === 'night') return false;
+                // 'preferred' の場合はスキップ（問題なく割り当て可能）
             }
             if (day > 1 && unavailability[doctor.id]?.[day - 1] === 'er_night') return false;
 
@@ -1410,6 +1414,12 @@
 
         function getCandidateScore(doc, day, isHolidayShift, isBackup, currentCounts, currentSchedule) {
             let score = 0;
+            
+            // 当番希望を出している場合は圧倒的な高スコアを付与
+            if (unavailability[doc.id]?.[day] === 'preferred') {
+                score += 5000;
+            }
+            
             const count = isBackup ? currentCounts[doc.id].backup : currentCounts[doc.id].shift;
             const limit = isBackup ? doc.limitBackup : doc.limitShift;
             const remain = limit - count;
@@ -1730,3 +1740,4 @@
     </script>
 </body>
 </html>
+
