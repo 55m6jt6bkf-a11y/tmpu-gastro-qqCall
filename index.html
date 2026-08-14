@@ -56,32 +56,32 @@
         /* =========================================
            PDF出力時のレイアウトおよび文字サイズ調整 
            ========================================= */
-        .pdf-exporting { width: 1800px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; height: auto !important; background: #ffffff !important; }
-        .pdf-exporting * { line-height: 1.5 !important; }
+        .pdf-exporting { width: 2400px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; height: auto !important; background: #ffffff !important; }
+        .pdf-exporting * { line-height: 1.5 !important; opacity: 1 !important; } /* 透過を解除してくっきり */
         
         /* 見切れ防止のため overflow-hidden などを強制解除 */
         .pdf-exporting .overflow-hidden { overflow: visible !important; }
         
         /* ヘッダータイトル */
-        .pdf-exporting #calendar-header { padding-top: 24px !important; padding-bottom: 24px !important; }
-        .pdf-exporting #calendar-header h2 { font-size: 48px !important; font-weight: 900 !important; }
-        .pdf-exporting #calendar-header span { font-size: 24px !important; font-weight: 800 !important; padding: 8px 20px !important; border-width: 2px !important; }
+        .pdf-exporting #calendar-header { padding-top: 32px !important; padding-bottom: 32px !important; border-bottom-width: 3px !important; }
+        .pdf-exporting #calendar-header h2 { font-size: 64px !important; font-weight: 900 !important; color: #000 !important; }
+        .pdf-exporting #calendar-header span { font-size: 32px !important; font-weight: 800 !important; padding: 12px 24px !important; border-width: 3px !important; color: #111 !important; border-color: #444 !important; }
         
         .pdf-exporting .calendar-scroll { overflow: visible !important; }
         .pdf-exporting #calendar-grid { 
             display: grid !important; 
             grid-template-columns: repeat(7, minmax(0, 1fr)) !important; 
-            min-width: 1800px !important; 
-            gap: 1px !important;
-            background-color: #e2e8f0 !important;
+            min-width: 2400px !important; 
+            gap: 2px !important; /* グリッドの線を太く */
+            background-color: #94a3b8 !important; /* グリッド線の色を濃く */
         }
         
         /* セル内部の調整 */
         .pdf-exporting #calendar-grid > div {
-            min-height: 240px !important;
+            min-height: 300px !important;
             height: auto !important;
             overflow: visible !important;
-            padding: 20px 16px !important;
+            padding: 24px 20px !important;
             display: flex !important;
             flex-direction: column !important;
         }
@@ -89,58 +89,65 @@
         /* 曜日ヘッダーセル専用の調整 */
         .pdf-exporting #calendar-grid > div.text-center {
             min-height: auto !important;
-            padding: 16px 0 !important;
-            font-size: 32px !important;
+            padding: 20px 0 !important;
+            font-size: 40px !important;
             font-weight: 900 !important;
         }
 
         .pdf-exporting .justify-end { justify-content: flex-start !important; } 
 
         /* 日付数字 */
-        .pdf-exporting .font-bold.text-base, .pdf-exporting .font-bold.md\:text-sm { font-size: 36px !important; font-weight: 900 !important; } 
+        .pdf-exporting .font-bold.text-base, .pdf-exporting .font-bold.md\:text-sm { font-size: 48px !important; font-weight: 900 !important; } 
         
         /* 祝日名 */
-        .pdf-exporting .text-rose-500.font-medium { font-size: 20px !important; font-weight: 800 !important; margin-top: 4px !important; }
+        .pdf-exporting .text-rose-500.font-medium { font-size: 26px !important; font-weight: 800 !important; margin-top: 8px !important; }
         
         /* 担当者枠のベース */
         .pdf-exporting .md\:p-1\.5, .pdf-exporting .p-2 { 
-            padding: 14px 16px !important; 
-            margin-bottom: 12px !important; 
-            min-height: 50px !important;
+            padding: 18px 20px !important; 
+            margin-bottom: 16px !important; 
+            min-height: 60px !important;
             height: auto !important;
-            border-width: 2px !important;
+            border-width: 3px !important; /* 枠線を太く */
         }
+
+        /* 昼夜などの枠自体の色付けも少しはっきりさせる */
+        .pdf-exporting .bg-amber-50 { background-color: #fffbeb !important; border-color: #f59e0b !important; }
+        .pdf-exporting .bg-indigo-50 { background-color: #eef2ff !important; border-color: #6366f1 !important; }
         
         /* アイコン */
-        .pdf-exporting svg { width: 30px !important; height: 30px !important; flex-shrink: 0 !important; }
+        .pdf-exporting svg { width: 38px !important; height: 38px !important; flex-shrink: 0 !important; color: #000 !important; }
         
         /* 文字サイズ（極太＆大幅拡大） */
         .pdf-exporting .doc-main-name { 
-            font-size: 30px !important; 
+            font-size: 42px !important; 
             font-weight: 900 !important; 
-            margin-left: 10px !important; 
+            margin-left: 12px !important; 
             line-height: 1.4 !important;
             padding-bottom: 4px !important;
             display: inline-block !important;
+            color: #000 !important; /* メイン名は黒でくっきり */
         }
         .pdf-exporting .doc-backup-name { 
-            font-size: 20px !important; 
+            font-size: 28px !important; 
             font-weight: 800 !important; 
-            margin-left: 44px !important; 
-            margin-top: 8px !important; 
+            margin-left: 50px !important; 
+            margin-top: 10px !important; 
             line-height: 1.4 !important;
             padding-bottom: 2px !important;
             display: inline-block !important;
+            color: #222 !important; /* バックアップも濃い色で */
         }
         
         /* 他当番のバッジ文字 */
         .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-\[10px\], .pdf-exporting .mt-2.pt-1\.5.border-t .text-xs { 
-            font-size: 20px !important; 
-            font-weight: 800 !important;
-            padding: 10px 14px !important; 
-            margin-bottom: 8px !important; 
+            font-size: 26px !important; 
+            font-weight: 900 !important;
+            padding: 12px 16px !important; 
+            margin-bottom: 10px !important; 
             line-height: 1.4 !important;
-            border-width: 2px !important;
+            border-width: 3px !important;
+            color: #000 !important; /* 強制的に黒系 */
         }
 
         /* 折り返しを禁止してレイアウト崩れを防ぐ */
@@ -1336,7 +1343,7 @@
                 
                 if (prevMonthScheduleData[prevLastDay]?.night) {
                     const prevN = prevMonthScheduleData[prevLastDay].night;
-                    if (prevN.main === doctor.id || prevN.backup === doctor.id) return false;
+                    if (prevN.main === doctor.id || prevN.backup === doc.id) return false;
                 }
             }
             return true;
@@ -1610,7 +1617,7 @@
                     scale: 2, 
                     useCORS: true, 
                     backgroundColor: '#ffffff',
-                    windowWidth: 1800 
+                    windowWidth: 2400 
                 }).then(canvas => {
                     const imgData = canvas.toDataURL('image/jpeg', 1.0);
                     const { jsPDF } = window.jspdf;
