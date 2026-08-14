@@ -39,7 +39,7 @@
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         
         .sticky-col { position: sticky; left: 0; background-color: #ffffff; z-index: 10; box-shadow: inset -1px 0 0 #f1f5f9; }
@@ -53,26 +53,100 @@
         .toast-enter { opacity: 1; transform: translate(-50%, 0); }
         .toast-leave { opacity: 0; transform: translate(-50%, -20px); pointer-events: none; }
         
-        /* PDF出力時のレイアウト維持用 */
-        .pdf-exporting { width: 1400px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; height: auto !important; }
-        .pdf-exporting * { overflow: visible !important; line-height: 1.35 !important; }
-        .pdf-exporting #calendar-header { padding-top: 20px !important; padding-bottom: 20px !important; }
-        .pdf-exporting .calendar-scroll { overflow: visible !important; } /* キャプチャ見切れ防止 */
+        /* =========================================
+           PDF出力時のレイアウトおよび文字サイズ調整 
+           ========================================= */
+        .pdf-exporting { width: 1800px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; height: auto !important; background: #ffffff !important; }
+        .pdf-exporting * { line-height: 1.5 !important; }
+        
+        /* 見切れ防止のため overflow-hidden などを強制解除 */
+        .pdf-exporting .overflow-hidden { overflow: visible !important; }
+        
+        /* ヘッダータイトル */
+        .pdf-exporting #calendar-header { padding-top: 24px !important; padding-bottom: 24px !important; }
+        .pdf-exporting #calendar-header h2 { font-size: 48px !important; font-weight: 900 !important; }
+        .pdf-exporting #calendar-header span { font-size: 24px !important; font-weight: 800 !important; padding: 8px 20px !important; border-width: 2px !important; }
+        
+        .pdf-exporting .calendar-scroll { overflow: visible !important; }
         .pdf-exporting #calendar-grid { 
             display: grid !important; 
             grid-template-columns: repeat(7, minmax(0, 1fr)) !important; 
-            min-width: 1400px !important; 
+            min-width: 1800px !important; 
             gap: 1px !important;
+            background-color: #e2e8f0 !important;
         }
-        /* PDF出力時は文字の省略(truncate)を解除してフル表示 */
-        .pdf-exporting .truncate { overflow: visible !important; text-overflow: clip !important; white-space: normal !important; word-break: break-all !important; }
-        .pdf-exporting .whitespace-nowrap { white-space: normal !important; }
         
-        /* PDF出力時の文字サイズ調整（少し大きめに） */
-        .pdf-exporting .doc-main-name { font-size: 15px !important; font-weight: 700 !important; }
-        .pdf-exporting .doc-backup-name { font-size: 12px !important; }
+        /* セル内部の調整 */
+        .pdf-exporting #calendar-grid > div {
+            min-height: 240px !important;
+            height: auto !important;
+            overflow: visible !important;
+            padding: 20px 16px !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        
+        /* 曜日ヘッダーセル専用の調整 */
+        .pdf-exporting #calendar-grid > div.text-center {
+            min-height: auto !important;
+            padding: 16px 0 !important;
+            font-size: 32px !important;
+            font-weight: 900 !important;
+        }
 
-        /* PDF出力時の表示切り替え用 */
+        .pdf-exporting .justify-end { justify-content: flex-start !important; } 
+
+        /* 日付数字 */
+        .pdf-exporting .font-bold.text-base, .pdf-exporting .font-bold.md\:text-sm { font-size: 36px !important; font-weight: 900 !important; } 
+        
+        /* 祝日名 */
+        .pdf-exporting .text-rose-500.font-medium { font-size: 20px !important; font-weight: 800 !important; margin-top: 4px !important; }
+        
+        /* 担当者枠のベース */
+        .pdf-exporting .md\:p-1\.5, .pdf-exporting .p-2 { 
+            padding: 14px 16px !important; 
+            margin-bottom: 12px !important; 
+            min-height: 50px !important;
+            height: auto !important;
+            border-width: 2px !important;
+        }
+        
+        /* アイコン */
+        .pdf-exporting svg { width: 30px !important; height: 30px !important; flex-shrink: 0 !important; }
+        
+        /* 文字サイズ（極太＆大幅拡大） */
+        .pdf-exporting .doc-main-name { 
+            font-size: 30px !important; 
+            font-weight: 900 !important; 
+            margin-left: 10px !important; 
+            line-height: 1.4 !important;
+            padding-bottom: 4px !important;
+            display: inline-block !important;
+        }
+        .pdf-exporting .doc-backup-name { 
+            font-size: 20px !important; 
+            font-weight: 800 !important; 
+            margin-left: 44px !important; 
+            margin-top: 8px !important; 
+            line-height: 1.4 !important;
+            padding-bottom: 2px !important;
+            display: inline-block !important;
+        }
+        
+        /* 他当番のバッジ文字 */
+        .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-\[10px\], .pdf-exporting .mt-2.pt-1\.5.border-t .text-xs { 
+            font-size: 20px !important; 
+            font-weight: 800 !important;
+            padding: 10px 14px !important; 
+            margin-bottom: 8px !important; 
+            line-height: 1.4 !important;
+            border-width: 2px !important;
+        }
+
+        /* 折り返しを禁止してレイアウト崩れを防ぐ */
+        .pdf-exporting .truncate { overflow: visible !important; text-overflow: clip !important; white-space: nowrap !important; }
+        .pdf-exporting .whitespace-nowrap { white-space: nowrap !important; }
+
         .pdf-exporting .mobile-only { display: none !important; }
         .pdf-exporting .desktop-only { display: block !important; }
         .pdf-exporting .desktop-only-contents { display: contents !important; }
@@ -903,12 +977,10 @@
                 { label: '土', class: 'text-indigo-600' }
             ];
             
-            // Header
-            html += `<div class="hidden md:contents desktop-only-contents">`;
+            // Header: PDF出力(html2canvas)対応のため、display: contents をやめて直のdivとして配置
             dows.forEach(dow => {
-                html += `<div class="text-center py-2 sm:py-3 bg-white ${dow.class} font-semibold text-[10px] sm:text-xs tracking-widest border-b border-slate-100">${dow.label}</div>`;
+                html += `<div class="hidden md:block desktop-only text-center py-2 sm:py-3 bg-white ${dow.class} font-bold text-[10px] sm:text-xs tracking-widest border-b border-slate-100">${dow.label}</div>`;
             });
-            html += `</div>`;
 
             const firstDay = new Date(currentYear, currentMonth - 1, 1);
             const startDow = firstDay.getDay();
@@ -973,13 +1045,33 @@
                     'wakabayashi_day': { short: '若林日', color: 'text-fuchsia-700', bg: 'bg-fuchsia-50', border: 'border-fuchsia-200/80' },
                     'wakabayashi_night': { short: '若林夜', color: 'text-fuchsia-700', bg: 'bg-fuchsia-50', border: 'border-fuchsia-200/80' }
                 };
+                
+                // 表示順序を「昼 -> 夜」にするための重み付け定義
+                const dutyOrder = {
+                    'er_day': 1,
+                    'icu_day': 2,
+                    'admin_day': 3,
+                    'wakabayashi_day': 4,
+                    'er_night': 5,
+                    'icu_night': 6,
+                    'admin_night': 7,
+                    'wakabayashi_night': 8
+                };
+
                 let dailyDuties = [];
                 doctors.forEach(doc => {
                     const reason = unavailability[doc.id]?.[d];
                     if (reason && dutyMap[reason]) {
-                        dailyDuties.push({ name: doc.name, duty: dutyMap[reason] });
+                        dailyDuties.push({ 
+                            name: doc.name, 
+                            duty: dutyMap[reason], 
+                            order: dutyOrder[reason] // ソート用の値を持たせる
+                        });
                     }
                 });
+                
+                // order（昼が先、夜が後）に基づいてソート
+                dailyDuties.sort((a, b) => a.order - b.order);
                 
                 if (dailyDuties.length > 0) {
                     otherDutiesHtml = '<div class="mt-2 pt-1.5 border-t border-slate-200/60 flex flex-col gap-1.5 md:gap-1 pointer-events-none">';
@@ -1518,12 +1610,13 @@
                     scale: 2, 
                     useCORS: true, 
                     backgroundColor: '#ffffff',
-                    windowWidth: 1400 
+                    windowWidth: 1800 
                 }).then(canvas => {
                     const imgData = canvas.toDataURL('image/jpeg', 1.0);
                     const { jsPDF } = window.jspdf;
                     
-                    const pdf = new jsPDF('landscape', 'mm', 'a4');
+                    // 用紙の向きを portrait (縦) に変更
+                    const pdf = new jsPDF('portrait', 'mm', 'a4');
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = pdf.internal.pageSize.getHeight();
                     
