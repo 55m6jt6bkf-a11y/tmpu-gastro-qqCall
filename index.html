@@ -27,7 +27,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // グローバルスコープにFirebaseの関数とdbインスタンスを公開（既存のロジックから呼ぶため）
+        // グローバルスコープにFirebaseの関数とdbインスタンスを公開
         window.firebaseDb = db;
         window.firebaseDoc = doc;
         window.firebaseSetDoc = setDoc;
@@ -57,12 +57,10 @@
            PDF出力時のレイアウトおよび文字サイズ調整 
            ========================================= */
         .pdf-exporting { width: 2400px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; height: auto !important; background: #ffffff !important; }
-        .pdf-exporting * { line-height: 1.5 !important; opacity: 1 !important; } /* 透過を解除してくっきり */
+        .pdf-exporting * { line-height: 1.5 !important; opacity: 1 !important; }
         
-        /* 見切れ防止のため overflow-hidden などを強制解除 */
         .pdf-exporting .overflow-hidden { overflow: visible !important; }
         
-        /* ヘッダータイトル */
         .pdf-exporting #calendar-header { padding-top: 32px !important; padding-bottom: 32px !important; border-bottom-width: 3px !important; }
         .pdf-exporting #calendar-header h2 { font-size: 64px !important; font-weight: 900 !important; color: #000 !important; }
         .pdf-exporting #calendar-header span { font-size: 32px !important; font-weight: 800 !important; padding: 12px 24px !important; border-width: 3px !important; color: #111 !important; border-color: #444 !important; }
@@ -72,11 +70,10 @@
             display: grid !important; 
             grid-template-columns: repeat(7, minmax(0, 1fr)) !important; 
             min-width: 2400px !important; 
-            gap: 2px !important; /* グリッドの線を太く */
-            background-color: #94a3b8 !important; /* グリッド線の色を濃く */
+            gap: 2px !important;
+            background-color: #94a3b8 !important;
         }
         
-        /* セル内部の調整 */
         .pdf-exporting #calendar-grid > div {
             min-height: 300px !important;
             height: auto !important;
@@ -86,7 +83,6 @@
             flex-direction: column !important;
         }
         
-        /* 曜日ヘッダーセル専用の調整 */
         .pdf-exporting #calendar-grid > div.text-center {
             min-height: auto !important;
             padding: 20px 0 !important;
@@ -96,29 +92,23 @@
 
         .pdf-exporting .justify-end { justify-content: flex-start !important; } 
 
-        /* 日付数字 */
         .pdf-exporting .font-bold.text-base, .pdf-exporting .font-bold.md\:text-sm { font-size: 48px !important; font-weight: 900 !important; } 
         
-        /* 祝日名 */
         .pdf-exporting .text-rose-500.font-medium { font-size: 26px !important; font-weight: 800 !important; margin-top: 8px !important; }
         
-        /* 担当者枠のベース */
         .pdf-exporting .md\:p-1\.5, .pdf-exporting .p-2 { 
             padding: 18px 20px !important; 
             margin-bottom: 16px !important; 
             min-height: 60px !important;
             height: auto !important;
-            border-width: 3px !important; /* 枠線を太く */
+            border-width: 3px !important;
         }
 
-        /* 昼夜などの枠自体の色付けも少しはっきりさせる */
         .pdf-exporting .bg-amber-50 { background-color: #fffbeb !important; border-color: #f59e0b !important; }
         .pdf-exporting .bg-indigo-50 { background-color: #eef2ff !important; border-color: #6366f1 !important; }
         
-        /* アイコン */
         .pdf-exporting svg { width: 38px !important; height: 38px !important; flex-shrink: 0 !important; color: #000 !important; }
         
-        /* 文字サイズ（極太＆大幅拡大） */
         .pdf-exporting .doc-main-name { 
             font-size: 42px !important; 
             font-weight: 900 !important; 
@@ -126,7 +116,7 @@
             line-height: 1.4 !important;
             padding-bottom: 4px !important;
             display: inline-block !important;
-            color: #000 !important; /* メイン名は黒でくっきり */
+            color: #000 !important;
         }
         .pdf-exporting .doc-backup-name { 
             font-size: 28px !important; 
@@ -136,10 +126,9 @@
             line-height: 1.4 !important;
             padding-bottom: 2px !important;
             display: inline-block !important;
-            color: #222 !important; /* バックアップも濃い色で */
+            color: #222 !important;
         }
         
-        /* 他当番のバッジ文字 */
         .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-\[10px\], .pdf-exporting .mt-2.pt-1\.5.border-t .text-xs { 
             font-size: 26px !important; 
             font-weight: 900 !important;
@@ -147,10 +136,9 @@
             margin-bottom: 10px !important; 
             line-height: 1.4 !important;
             border-width: 3px !important;
-            color: #000 !important; /* 強制的に黒系 */
+            color: #000 !important;
         }
 
-        /* 折り返しを禁止してレイアウト崩れを防ぐ */
         .pdf-exporting .truncate { overflow: visible !important; text-overflow: clip !important; white-space: nowrap !important; }
         .pdf-exporting .whitespace-nowrap { white-space: nowrap !important; }
 
@@ -172,22 +160,53 @@
         <span id="toast-message"></span>
     </div>
 
-    <!-- 編集モーダル（スワップのみ） -->
+    <!-- 編集モーダル -->
     <div id="edit-shift-modal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
             <!-- ヘッダー -->
             <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
-                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                    <span id="edit-modal-title">担当の交換</span>
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    <span id="edit-modal-title">担当変更</span>
                 </h3>
                 <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
-            <!-- コンテンツ: 日程交換 -->
-            <div class="p-5 overflow-y-auto flex flex-col">
+            <!-- タブボタン -->
+            <div class="flex border-b border-slate-200">
+                <button onclick="switchEditTab('direct')" id="tab-btn-direct" class="flex-1 py-3 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 bg-white">担当者を変更</button>
+                <button onclick="switchEditTab('swap')" id="tab-btn-swap" class="flex-1 py-3 text-sm font-bold text-slate-500 border-b-2 border-transparent bg-slate-50 hover:bg-white transition-colors">日程を交換 (スワップ)</button>
+            </div>
+
+            <!-- タブコンテンツ: 直接変更 -->
+            <div id="edit-tab-direct" class="p-5 overflow-y-auto">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase">1st (Main) 担当</label>
+                        <select id="edit-main-select" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none bg-white shadow-sm transition-colors" onchange="checkEditBackupReq()">
+                            <!-- JSで生成 -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase flex justify-between">
+                            <span>Backup 担当</span>
+                            <span id="edit-backup-badge" class="text-[10px] bg-rose-100 text-rose-700 px-1.5 rounded hidden">必須</span>
+                        </label>
+                        <select id="edit-backup-select" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none bg-white shadow-sm transition-colors">
+                            <!-- JSで生成 -->
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-2">
+                    <button onclick="closeEditModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-colors">キャンセル</button>
+                    <button onclick="saveDirectEdit()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">変更を保存</button>
+                </div>
+            </div>
+
+            <!-- タブコンテンツ: 日程交換 -->
+            <div id="edit-tab-swap" class="p-5 overflow-y-auto hidden flex-col">
                 <div class="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <label class="block text-xs font-bold text-slate-600 mb-2">誰のシフトを交換しますか？</label>
                     <div class="flex gap-4">
@@ -211,7 +230,6 @@
                         <!-- JSで生成 -->
                     </div>
                 </div>
-                
                 <div class="mt-6 flex justify-end gap-2">
                     <button onclick="closeEditModal()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-colors">閉じる</button>
                 </div>
@@ -249,14 +267,17 @@
 
         <div id="tab-schedule" class="tab-content space-y-4 sm:space-y-6 fade-in">
             
-            <!-- 使い方インフォメーション -->
             <div class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 bg-indigo-50/50 p-3 sm:px-4 rounded-xl border border-indigo-100 shadow-sm">
                 <svg class="w-5 h-5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <p>カレンダー内の名前をクリックすると、<span class="font-bold text-indigo-700">他の日との担当交換（スワップ）</span>ができます。</p>
+                <p>カレンダー内の名前をクリックすると、<span class="font-bold text-indigo-700">担当の直接変更</span>や<span class="font-bold text-indigo-700">他の日との担当交換（スワップ）</span>ができます。</p>
             </div>
 
             <div id="schedule-actions" class="flex flex-wrap justify-end gap-2 sm:gap-3">
-                <button onclick="resetSchedule()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95 mr-auto">
+                <button onclick="undo()" id="undo-btn-schedule" disabled class="px-3 sm:px-4 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95 opacity-50 cursor-not-allowed mr-auto">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                    <span class="hidden sm:inline">元に戻す</span>
+                </button>
+                <button onclick="resetSchedule()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     <span id="reset-schedule-btn-text">月をリセット</span>
                 </button>
@@ -310,7 +331,11 @@
         </div>
 
         <div id="tab-settings" class="tab-content hidden space-y-4 sm:space-y-6">
-            <div class="flex justify-end">
+            <div class="flex justify-end gap-2 sm:gap-3">
+                <button onclick="undo()" id="undo-btn-settings" disabled class="px-3 sm:px-4 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95 opacity-50 cursor-not-allowed mr-auto">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                    <span>元に戻す</span>
+                </button>
                 <button onclick="resetSettings()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     <span id="reset-settings-btn-text">月をリセット</span>
@@ -458,6 +483,10 @@
         let prevMonthScheduleData = {};
         let prevMonthUnavailability = {};
 
+        // 履歴管理用
+        let historyStack = [];
+        const MAX_HISTORY = 10;
+
         let toastTimeout;
         let unsubscribeMonth = null;
         let unsubscribeDoctors = null;
@@ -519,6 +548,55 @@
                 container.classList.add('toast-leave');
             }, 6000);
         }
+        
+        // --- Undo (元に戻す) ロジック ---
+        function pushToHistory() {
+            historyStack.push({
+                scheduleData: JSON.parse(JSON.stringify(scheduleData)),
+                counts: JSON.parse(JSON.stringify(counts)),
+                unavailability: JSON.parse(JSON.stringify(unavailability)),
+                customHolidays: JSON.parse(JSON.stringify(customHolidays))
+            });
+            if (historyStack.length > MAX_HISTORY) {
+                historyStack.shift();
+            }
+            updateUndoButton();
+        }
+
+        function undo() {
+            if (historyStack.length === 0) return;
+            const prevState = historyStack.pop();
+            
+            scheduleData = prevState.scheduleData;
+            counts = prevState.counts;
+            unavailability = prevState.unavailability;
+            customHolidays = prevState.customHolidays;
+            
+            saveMonthData(); 
+            
+            renderCustomHolidays();
+            renderUnavailabilityTable();
+            renderCalendar();
+            renderSummary();
+            
+            updateUndoButton();
+            showMessage("1つ前の操作を取り消しました");
+        }
+
+        function updateUndoButton() {
+            const btns = [document.getElementById('undo-btn-schedule'), document.getElementById('undo-btn-settings')];
+            btns.forEach(btn => {
+                if (!btn) return;
+                if (historyStack.length === 0) {
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    btn.disabled = true;
+                } else {
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.disabled = false;
+                }
+            });
+        }
+        // -------------------------------
         
         function generateId() {
             return 'doc_' + Math.random().toString(36).substr(2, 9);
@@ -651,6 +729,8 @@
         }
 
         function prevMonth() {
+            historyStack = []; // 月をまたいだら履歴リセット
+            updateUndoButton();
             currentMonth--;
             if (currentMonth < 1) {
                 currentMonth = 12;
@@ -660,6 +740,8 @@
         }
 
         function nextMonth() {
+            historyStack = []; // 月をまたいだら履歴リセット
+            updateUndoButton();
             currentMonth++;
             if (currentMonth > 12) {
                 currentMonth = 1;
@@ -669,6 +751,7 @@
         }
         
         function toggleCustomHoliday(day) {
+            pushToHistory();
             const idx = customHolidays.indexOf(day);
             if (idx > -1) {
                 customHolidays.splice(idx, 1);
@@ -679,6 +762,7 @@
         }
 
         function updateUnavail(docId, day, val) {
+            pushToHistory();
             if (!unavailability[docId]) unavailability[docId] = {};
             if (val === '') {
                 delete unavailability[docId][day];
@@ -754,6 +838,7 @@
             if (!confirm(`【警告】\n${currentYear}年${currentMonth}月の「スケジュール割当」をすべて白紙に戻しますか？\n※除外日や休診日設定はそのまま残ります。`)) {
                 return;
             }
+            pushToHistory();
             scheduleData = {};
             counts = {};
             saveMonthData();
@@ -768,6 +853,7 @@
             if (!confirm(`【警告】\n${currentYear}年${currentMonth}月の「追加の休診日」と「除外日・不可条件」をすべて白紙に戻しますか？\n※スケジュール割当はそのまま残ります。`)) {
                 return;
             }
+            pushToHistory();
             unavailability = {};
             customHolidays = [];
             saveMonthData();
@@ -917,7 +1003,7 @@
                 const rowBaseBg = isEven ? 'bg-white' : 'bg-slate-100/60';
 
                 bodyHtml += `<tr class="hover:bg-slate-200/50 transition-colors group">
-                    <td class="sticky-col p-1.5 sm:p-2 pl-2 sm:pl-4 border-b border-r border-slate-200 text-left font-medium text-slate-700 ${rowBaseBg} group-hover:!bg-slate-200/50 group-focus-within:!bg-indigo-100 group-focus-within:!text-indigo-800 group-focus-within:font-bold shadow-[1px_0_0_#f1f5f9] group-focus-within:shadow-[inset_4px_0_0_#4f46e5,1px_0_0_#f1f5f9] whitespace-nowrap text-[10px] sm:text-xs transition-all duration-200">${doc.name}</td>`;
+                    <td class="sticky-col p-1.5 sm:p-2 pl-2 sm:pl-4 border-b border-r border-slate-200 text-left font-medium text-slate-700 ${rowBaseBg} group-hover:!bg-slate-200/50 group-focus-within:!bg-indigo-100 group-focus-within:!text-indigo-800 group-focus-within:!font-bold shadow-[1px_0_0_#f1f5f9] group-focus-within:shadow-[inset_4px_0_0_#4f46e5,1px_0_0_#f1f5f9] whitespace-nowrap text-[10px] sm:text-xs transition-all duration-200">${doc.name}</td>`;
                 for (let d = 1; d <= daysInMonth; d++) {
                     const isHol = isHolidayDay(d);
                     const val = unavailability[doc.id]?.[d] || '';
@@ -1154,23 +1240,42 @@
             }
 
             if (day > 1) {
+                // 救急当直の翌日は除外
                 if (unavailability[doc.id]?.[day - 1] === 'er_night') return false;
-                if (scheduleData[day - 1]?.night) {
-                    const prevN = scheduleData[day - 1].night;
-                    if (prevN.main === doc.id || prevN.backup === doc.id) return false;
-                }
+                // 手動変更時は前日の消化器当番(連続日程)でも候補に含めるため、以下の条件を除外しない
             }
             if (day === 1) {
                 const pYear = currentMonth === 1 ? currentYear - 1 : currentYear;
                 const pMonth = currentMonth === 1 ? 12 : currentMonth - 1;
                 const prevLastDay = getDaysInMonth(pYear, pMonth);
+                // 救急当直の翌日は除外
                 if (prevMonthUnavailability[doc.id]?.[prevLastDay] === 'er_night') return false;
-                if (prevMonthScheduleData[prevLastDay]?.night) {
-                    const prevN = prevMonthScheduleData[prevLastDay].night;
-                    if (prevN.main === doc.id || prevN.backup === doc.id) return false;
-                }
+                // 手動変更時は前日の消化器当番(連続日程)でも候補に含めるため、以下の条件を除外しない
             }
             return true;
+        }
+
+        function getAvailableDoctorsForSlot(day, shiftType, isBackup, currentMainId = null) {
+            let available = [];
+            let currentDocId = null;
+            if (scheduleData[day] && scheduleData[day][shiftType]) {
+                currentDocId = isBackup ? scheduleData[day][shiftType].backup : scheduleData[day][shiftType].main;
+            }
+
+            doctors.forEach(doc => {
+                if (!isDoctorAvailableForSlot(doc, day, shiftType, isBackup, currentMainId)) return;
+
+                let isOverLimit = false;
+                let countObj = counts[doc.id] || {shift:0, backup:0};
+                if (isBackup) {
+                    if (countObj.backup >= doc.limitBackup && doc.id !== currentDocId) isOverLimit = true;
+                } else {
+                    if (countObj.shift >= doc.limitShift && doc.id !== currentDocId) isOverLimit = true;
+                }
+
+                available.push({ doc, isOverLimit });
+            });
+            return available;
         }
 
         function getSwapCandidates(day, type, role) {
@@ -1216,20 +1321,66 @@
         }
 
         // --- モーダル制御 ---
+        function switchEditTab(tabName) {
+            document.getElementById('edit-tab-direct').classList.add('hidden');
+            document.getElementById('edit-tab-swap').classList.add('hidden');
+            document.getElementById('edit-tab-swap').classList.remove('flex');
+            
+            document.getElementById('tab-btn-direct').classList.replace('text-indigo-600', 'text-slate-500');
+            document.getElementById('tab-btn-direct').classList.replace('border-indigo-600', 'border-transparent');
+            document.getElementById('tab-btn-direct').classList.replace('bg-white', 'bg-slate-50');
+            
+            document.getElementById('tab-btn-swap').classList.replace('text-indigo-600', 'text-slate-500');
+            document.getElementById('tab-btn-swap').classList.replace('border-indigo-600', 'border-transparent');
+            document.getElementById('tab-btn-swap').classList.replace('bg-white', 'bg-slate-50');
+
+            if (tabName === 'direct') {
+                document.getElementById('edit-tab-direct').classList.remove('hidden');
+                document.getElementById('tab-btn-direct').classList.replace('text-slate-500', 'text-indigo-600');
+                document.getElementById('tab-btn-direct').classList.replace('border-transparent', 'border-indigo-600');
+                document.getElementById('tab-btn-direct').classList.replace('bg-slate-50', 'bg-white');
+            } else {
+                document.getElementById('edit-tab-swap').classList.remove('hidden');
+                document.getElementById('edit-tab-swap').classList.add('flex');
+                document.getElementById('tab-btn-swap').classList.replace('text-slate-500', 'text-indigo-600');
+                document.getElementById('tab-btn-swap').classList.replace('border-transparent', 'border-indigo-600');
+                document.getElementById('tab-btn-swap').classList.replace('bg-slate-50', 'bg-white');
+            }
+        }
+
         function openEditModal(day, type) {
             currentEditDay = day;
             currentEditType = type;
             
             const typeStr = type === 'day' ? '昼' : '夜';
-            document.getElementById('edit-modal-title').innerHTML = `${day}日(${getDayOfWeek(currentYear, currentMonth, day)}) <span class="text-indigo-600">${typeStr}</span> の担当交換`;
+            document.getElementById('edit-modal-title').innerHTML = `${day}日(${getDayOfWeek(currentYear, currentMonth, day)}) <span class="text-indigo-600">${typeStr}</span> の担当変更`;
             
             const shiftData = scheduleData[day] && scheduleData[day][type] ? scheduleData[day][type] : {main: null, backup: null};
             
-            if (!shiftData.main || shiftData.main === 'ERROR') {
-                showMessage("この枠には交換可能な担当者が割り当てられていません。", true);
-                return;
+            // --- 直接変更タブの準備 ---
+            const mainSelect = document.getElementById('edit-main-select');
+            let mainOptions = '<option value="">(未選択)</option>';
+            const mainCandidates = getAvailableDoctorsForSlot(day, type, false, shiftData.main);
+            
+            let hasCurrentMain = false;
+            mainCandidates.forEach(c => {
+                const isSelected = c.doc.id === shiftData.main;
+                if (isSelected) hasCurrentMain = true;
+                const overText = c.isOverLimit ? ' (回数上限)' : '';
+                mainOptions += `<option value="${c.doc.id}" ${isSelected ? 'selected' : ''}>${c.doc.name}${overText}</option>`;
+            });
+            
+            if (shiftData.main && shiftData.main !== 'ERROR' && !hasCurrentMain) {
+                mainOptions += `<option value="${shiftData.main}" selected>${getDoctorNameById(shiftData.main)} (条件外・除外日など)</option>`;
             }
-
+            if (shiftData.main === 'ERROR') {
+                 mainOptions = `<option value="" selected>(割当不可)</option>` + mainOptions;
+            }
+            
+            mainSelect.innerHTML = mainOptions;
+            renderEditBackupOptions(); 
+            checkEditBackupReq();
+            
             // --- 日程交換タブの準備 ---
             document.getElementById('swap-main-name').textContent = getDoctorNameById(shiftData.main);
             const backupContainer = document.getElementById('swap-role-backup-container');
@@ -1243,6 +1394,7 @@
             
             renderSwapCandidates();
             
+            switchEditTab('direct');
             document.getElementById('edit-shift-modal').classList.remove('hidden');
         }
 
@@ -1250,6 +1402,73 @@
             document.getElementById('edit-shift-modal').classList.add('hidden');
             currentEditDay = null;
             currentEditType = null;
+        }
+
+        function renderEditBackupOptions() {
+            const mainId = document.getElementById('edit-main-select').value;
+            const shiftData = scheduleData[currentEditDay][currentEditType];
+            const backupSelect = document.getElementById('edit-backup-select');
+            
+            let backupOptions = '<option value="">(なし)</option>';
+            const backupCandidates = getAvailableDoctorsForSlot(currentEditDay, currentEditType, true, mainId);
+            
+            let hasCurrentBackup = false;
+            backupCandidates.forEach(c => {
+                const isSelected = c.doc.id === shiftData.backup;
+                if (isSelected) hasCurrentBackup = true;
+                const overText = c.isOverLimit ? ' (回数上限)' : '';
+                backupOptions += `<option value="${c.doc.id}" ${isSelected ? 'selected' : ''}>${c.doc.name}${overText}</option>`;
+            });
+            
+            if (shiftData.backup && shiftData.backup !== 'ERROR' && !hasCurrentBackup && shiftData.backup !== mainId) {
+                backupOptions += `<option value="${shiftData.backup}" selected>${getDoctorNameById(shiftData.backup)} (条件外・除外日など)</option>`;
+            }
+            
+            backupSelect.innerHTML = backupOptions;
+        }
+
+        function checkEditBackupReq() {
+            const mainId = document.getElementById('edit-main-select').value;
+            const mainDoc = doctors.find(d => d.id === mainId);
+            const badge = document.getElementById('edit-backup-badge');
+            const select = document.getElementById('edit-backup-select');
+            
+            renderEditBackupOptions(); 
+            
+            if (mainDoc && mainDoc.type === DOCTOR_TYPES.NEEDS_BACKUP) {
+                badge.classList.remove('hidden');
+                select.classList.add('border-rose-300', 'bg-rose-50');
+            } else {
+                badge.classList.add('hidden');
+                select.classList.remove('border-rose-300', 'bg-rose-50');
+            }
+        }
+
+        function saveDirectEdit() {
+            const mainId = document.getElementById('edit-main-select').value;
+            const backupId = document.getElementById('edit-backup-select').value;
+
+            if (!mainId) {
+                showMessage("1st(Main)担当者を選択してください", true); return;
+            }
+            const mainDoc = doctors.find(d => d.id === mainId);
+            if (mainDoc.type === DOCTOR_TYPES.NEEDS_BACKUP && (!backupId || backupId === '')) {
+                showMessage("この医師は要Backupのため、Backup担当者が必須です", true); return;
+            }
+
+            pushToHistory(); // Undo履歴に追加
+
+            scheduleData[currentEditDay][currentEditType] = {
+                main: mainId,
+                backup: backupId || null
+            };
+
+            recalcCounts();
+            saveMonthData();
+            renderCalendar();
+            renderSummary();
+            closeEditModal();
+            showMessage("担当者を変更しました");
         }
 
         function renderSwapCandidates() {
@@ -1297,6 +1516,8 @@
 
             if(!confirm(`${currentEditDay}日 ${typeA_str} の ${docA_name}先生 と\n${targetDay}日 ${typeB_str} の ${docB_name}先生 のシフトを交換しますか？`)) return;
 
+            pushToHistory(); // 履歴に保存
+
             scheduleData[currentEditDay][currentEditType][role] = docB_id;
             scheduleData[targetDay][targetType][targetRole] = docA_id;
 
@@ -1343,7 +1564,7 @@
                 
                 if (prevMonthScheduleData[prevLastDay]?.night) {
                     const prevN = prevMonthScheduleData[prevLastDay].night;
-                    if (prevN.main === doctor.id || prevN.backup === doc.id) return false;
+                    if (prevN.main === doctor.id || prevN.backup === doctor.id) return false;
                 }
             }
             return true;
@@ -1570,6 +1791,16 @@
         }
 
         function generateSchedule() {
+            const hasExistingSchedule = Object.keys(scheduleData).length > 0 && Object.values(scheduleData).some(day => Object.keys(day).length > 0);
+            
+            if (hasExistingSchedule) {
+                if (!confirm(`すでに作成されたスケジュールが存在します。\n自動生成を実行すると、現在のスケジュールはすべて上書きされますがよろしいですか？`)) {
+                    return; 
+                }
+            }
+
+            pushToHistory(); // 履歴に保存
+
             const ATTEMPTS = 100;
             let bestSchedule = null;
             let minErrors = Infinity;
@@ -1622,7 +1853,6 @@
                     const imgData = canvas.toDataURL('image/jpeg', 1.0);
                     const { jsPDF } = window.jspdf;
                     
-                    // 用紙の向きを portrait (縦) に変更
                     const pdf = new jsPDF('portrait', 'mm', 'a4');
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -1678,5 +1908,4 @@
     </script>
 </body>
 </html>
-
 
