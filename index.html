@@ -1845,12 +1845,12 @@
 
             setTimeout(() => {
                 html2canvas(element, { 
-                    scale: 2, 
+                    scale: 1.5, // 2から1.5に下げて解像度を少し落とす（ファイルサイズ削減）
                     useCORS: true, 
                     backgroundColor: '#ffffff',
                     windowWidth: 2400 
                 }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                    const imgData = canvas.toDataURL('image/jpeg', 0.6); // 品質を1.0から0.6に圧縮
                     const { jsPDF } = window.jspdf;
                     
                     const pdf = new jsPDF('portrait', 'mm', 'a4');
@@ -1908,4 +1908,5 @@
     </script>
 </body>
 </html>
+
 
