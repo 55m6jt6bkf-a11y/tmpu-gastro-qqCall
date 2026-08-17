@@ -55,7 +55,7 @@
         .toast-leave { opacity: 0; transform: translate(-50%, -20px); pointer-events: none; }
         
         /* =========================================
-           PDF/Excel出力時のレイアウトおよび文字サイズ調整 
+           PDF出力時のレイアウトおよび文字サイズ調整 
            ========================================= */
         .pdf-exporting { width: 2400px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; height: auto !important; background: #ffffff !important; }
         .pdf-exporting * { line-height: 1.5 !important; opacity: 1 !important; }
@@ -130,8 +130,8 @@
             color: #222 !important;
         }
         
-        .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-\[10px\], .pdf-exporting .mt-2.pt-1\.5.border-t .text-xs { 
-            font-size: 26px !important; 
+        .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-\[10px\], .pdf-exporting .mt-2.pt-1\.5.border-t .text-xs, .pdf-exporting .mt-2.pt-1\.5.border-t .text-sm { 
+            font-size: 30px !important; /* 当直・日直のPDF出力時のサイズも少し大きく */
             font-weight: 900 !important;
             padding: 12px 16px !important; 
             margin-bottom: 10px !important; 
@@ -286,7 +286,7 @@
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     PDF出力
                 </button>
-                <button onclick="exportToExcel()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
+                <button onclick="exportToExcelEditable()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Excel出力
                 </button>
@@ -1174,7 +1174,8 @@
                 if (dailyDuties.length > 0) {
                     otherDutiesHtml = '<div class="mt-2 pt-1.5 border-t border-slate-200/60 flex flex-col gap-1.5 md:gap-1 pointer-events-none">';
                     dailyDuties.forEach(item => {
-                        otherDutiesHtml += `<div class="text-xs md:text-[10px] ${item.duty.color} ${item.duty.bg} border ${item.duty.border} px-2 md:px-1.5 py-1 md:py-0.5 rounded-md truncate font-medium flex justify-between items-center"><span>${item.duty.short}</span><span class="truncate ml-1.5">${item.name}</span></div>`;
+                        // 画面上の当直・日直も見やすくするために text-sm/md:text-[11px] と font-bold に変更
+                        otherDutiesHtml += `<div class="text-sm md:text-[11px] ${item.duty.color} ${item.duty.bg} border ${item.duty.border} px-2 md:px-1.5 py-1 md:py-1 rounded-md truncate font-bold flex justify-between items-center"><span>${item.duty.short}</span><span class="truncate ml-1.5">${item.name}</span></div>`;
                     });
                     otherDutiesHtml += '</div>';
                 }
@@ -1892,68 +1893,222 @@
             }, 150);
         }
 
-        function exportToExcel() {
-            if (typeof html2canvas === 'undefined' || typeof ExcelJS === 'undefined') {
-                showMessage('Excel出力ライブラリが読み込まれていません。ページをリロードしてください。', true);
+        async function exportToExcelEditable() {
+            if (typeof ExcelJS === 'undefined') {
+                showMessage('Excel出力ライブラリが読み込まれていません。', true);
                 return;
             }
-            
-            showMessage('Excelを出力しています。しばらくお待ちください...');
-            
-            const element = document.getElementById('calendar-export-area');
-            const header = document.getElementById('calendar-header');
-            
-            document.getElementById('export-month-display').textContent = `${currentYear}年 ${currentMonth}月`;
-            header.classList.remove('hidden');
+            showMessage('編集可能なExcelを出力しています...');
 
-            element.classList.add('pdf-exporting');
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('スケジュール', {
+                views: [{ showGridLines: false }] 
+            });
 
-            setTimeout(() => {
-                html2canvas(element, { 
-                    scale: 1.5, 
-                    useCORS: true, 
-                    backgroundColor: '#ffffff',
-                    windowWidth: 2400 
-                }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/jpeg', 0.8); 
-                    
-                    const workbook = new ExcelJS.Workbook();
-                    const worksheet = workbook.addWorksheet('スケジュール', {
-                        views: [{ showGridLines: false }] // Excelのセルの枠線を非表示にする
-                    });
-                    
-                    const imageId = workbook.addImage({
-                        base64: imgData,
-                        extension: 'jpeg',
-                    });
-                    
-                    // B2セルを起点に、Excel表示上で見やすいサイズ(幅・高さを半分)にリサイズして画像を配置
-                    worksheet.addImage(imageId, {
-                        tl: { col: 1, row: 1 }, 
-                        ext: { width: canvas.width * 0.5, height: canvas.height * 0.5 } 
-                    });
-                    
-                    workbook.xlsx.writeBuffer().then(buffer => {
-                        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `消化器当番スケジュール_${currentYear}年${currentMonth}月.xlsx`;
-                        a.click();
-                        window.URL.revokeObjectURL(url);
+            // 全体の列幅を設定 (幅を22から25へ広げる)
+            sheet.columns = [
+                { width: 25 }, { width: 25 }, { width: 25 }, { width: 25 },
+                { width: 25 }, { width: 25 }, { width: 25 }
+            ];
+
+            // タイトル行 (フォントサイズと行高さを大きく)
+            sheet.mergeCells('A1:G1');
+            const titleCell = sheet.getCell('A1');
+            titleCell.value = `${currentYear}年 ${currentMonth}月 消化器当番スケジュール`;
+            titleCell.font = { size: 24, bold: true, color: { argb: 'FF1E293B' } }; 
+            titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            sheet.getRow(1).height = 50;
+
+            // 曜日ヘッダー
+            const dows = [
+                { label: '日', color: 'FFE11D48' }, 
+                { label: '月', color: 'FF64748B' }, 
+                { label: '火', color: 'FF64748B' },
+                { label: '水', color: 'FF64748B' },
+                { label: '木', color: 'FF64748B' },
+                { label: '金', color: 'FF64748B' },
+                { label: '土', color: 'FF4F46E5' }  
+            ];
+
+            const headerRow = sheet.addRow(dows.map(d => d.label));
+            headerRow.height = 35; // 30 -> 35
+            headerRow.eachCell((cell, colNumber) => {
+                cell.font = { bold: true, color: { argb: dows[colNumber-1].color }, size: 16 }; // 14 -> 16
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }; 
+                cell.border = { 
+                    top: { style: 'thin', color: { argb: 'FF94A3B8' } },
+                    bottom: { style: 'thin', color: { argb: 'FF94A3B8' } },
+                    left: { style: 'thin', color: { argb: 'FF94A3B8' } },
+                    right: { style: 'thin', color: { argb: 'FF94A3B8' } }
+                };
+            });
+
+            // カレンダー構築
+            const firstDay = new Date(currentYear, currentMonth - 1, 1);
+            const startDow = firstDay.getDay(); 
+            
+            let baseRow = 3;
+            let weeks = [];
+            let currentWeek = new Array(7).fill(null);
+            let dowIdx = startDow;
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                currentWeek[dowIdx] = d;
+                dowIdx++;
+                if (dowIdx === 7) {
+                    weeks.push(currentWeek);
+                    currentWeek = new Array(7).fill(null);
+                    dowIdx = 0;
+                }
+            }
+            if (dowIdx > 0) {
+                weeks.push(currentWeek);
+            }
+
+            weeks.forEach((week) => {
+                const dateRow = sheet.getRow(baseRow);
+                const dayShiftRow = sheet.getRow(baseRow + 1);
+                const nightShiftRow = sheet.getRow(baseRow + 2);
+                const otherRow = sheet.getRow(baseRow + 3);
+
+                // 文字サイズに合わせて行の高さを増やす
+                dateRow.height = 32;       // 28 -> 32
+                dayShiftRow.height = 55;   // 45 -> 55
+                nightShiftRow.height = 55; // 45 -> 55
+                otherRow.height = 80;      // 60 -> 80
+
+                week.forEach((day, colIdx) => {
+                    const colNum = colIdx + 1;
+                    const dateCell = dateRow.getCell(colNum);
+                    const dayShiftCell = dayShiftRow.getCell(colNum);
+                    const nightShiftCell = nightShiftRow.getCell(colNum);
+                    const otherCell = otherRow.getCell(colNum);
+
+                    let bgColor = 'FFFFFFFF'; 
+                    let isHol = false;
+                    let dateColor = 'FF334155'; 
+
+                    if (day === null) {
+                        bgColor = 'FFF8FAFC'; 
+                    } else {
+                        isHol = isHolidayDay(day);
+                        if (isHol) bgColor = 'FFFFF5F5';
+
+                        if (colIdx === 6) dateColor = 'FF4F46E5'; 
+                        if (colIdx === 0 || isHol) dateColor = 'FFE11D48'; 
+                    }
+
+                    const setStyle = (cell, isTop, isBottom) => {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+                        cell.border = {
+                            left: { style: 'thin', color: { argb: 'FF94A3B8' } },
+                            right: { style: 'thin', color: { argb: 'FF94A3B8' } },
+                            top: isTop ? { style: 'thin', color: { argb: 'FF94A3B8' } } : { style: 'hair', color: { argb: 'FFCBD5E1' } }, 
+                            bottom: isBottom ? { style: 'thin', color: { argb: 'FF94A3B8' } } : { style: 'hair', color: { argb: 'FFCBD5E1' } }
+                        };
+                        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                    };
+
+                    setStyle(dateCell, true, false);
+                    setStyle(dayShiftCell, false, false);
+                    setStyle(nightShiftCell, false, false);
+                    setStyle(otherCell, false, true);
+
+                    if (day !== null) {
+                        // 日付 (フォントを大きく、太く)
+                        const dateObj = new Date(currentYear, currentMonth - 1, day);
+                        let holidayName = '';
+                        if (typeof JapaneseHolidays !== 'undefined') {
+                            holidayName = JapaneseHolidays.isHoliday(dateObj) || '';
+                        }
+                        if (customHolidays.includes(day)) {
+                            holidayName = holidayName ? holidayName + '(休)' : '休診日';
+                        }
                         
-                        header.classList.add('hidden');
-                        element.classList.remove('pdf-exporting');
-                        showMessage('Excelの出力が完了しました！');
-                    });
+                        let dateRichText = [{ font: { size: 16, bold: true, color: { argb: dateColor } }, text: `${day} ` }];
+                        if (holidayName) {
+                            dateRichText.push({ font: { size: 12, bold: true, color: { argb: 'FFF43F5E' } }, text: holidayName });
+                        }
+                        dateCell.value = { richText: dateRichText };
+                        dateCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
 
-                }).catch(err => {
-                    console.error(err);
-                    showMessage('Excel出力に失敗しました', true);
-                    header.classList.add('hidden');
-                    element.classList.remove('pdf-exporting');
+                        // 昼シフト (フォントを大きく、すべて太字に)
+                        if (scheduleData[day] && isHol && scheduleData[day].day) {
+                            const sDay = scheduleData[day].day;
+                            const mName = getDoctorNameById(sDay.main);
+                            let shiftText = [{ font: { size: 16, bold: true, color: { argb: 'FFB45309' } }, text: `☀ 昼: ${mName}` }];
+                            if (sDay.backup) {
+                                const bName = getDoctorNameById(sDay.backup);
+                                shiftText.push({ font: { size: 14, bold: true, color: { argb: 'FFD97706' } }, text: `\n     B: ${bName}` });
+                            }
+                            dayShiftCell.value = { richText: shiftText };
+                            dayShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBEB' } }; 
+                        }
+
+                        // 夜シフト (フォントを大きく、すべて太字に)
+                        if (scheduleData[day] && scheduleData[day].night) {
+                            const sNight = scheduleData[day].night;
+                            const mName = getDoctorNameById(sNight.main);
+                            let shiftText = [{ font: { size: 16, bold: true, color: { argb: 'FF4338CA' } }, text: `🌙 夜: ${mName}` }];
+                            if (sNight.backup) {
+                                const bName = getDoctorNameById(sNight.backup);
+                                shiftText.push({ font: { size: 14, bold: true, color: { argb: 'FF4F46E5' } }, text: `\n     B: ${bName}` });
+                            }
+                            nightShiftCell.value = { richText: shiftText };
+                            nightShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } }; 
+                        }
+
+                        // その他 当直・日直 (フォントを大きく、すべて太字に)
+                        const dutyMap = {
+                            'er_day': { short: '救日', color: 'FF047857' },
+                            'er_night': { short: '救夜', color: 'FF7E22CE' },
+                            'icu_day': { short: 'ICU日', color: 'FF0E7490' },
+                            'icu_night': { short: 'ICU夜', color: 'FF0E7490' },
+                            'admin_day': { short: '管日', color: 'FF475569' },
+                            'admin_night': { short: '管夜', color: 'FF475569' },
+                            'wakabayashi_day': { short: '若日', color: 'FFA21CAF' },
+                            'wakabayashi_night': { short: '若夜', color: 'FFA21CAF' }
+                        };
+                        const dutyOrder = { 'er_day': 1, 'icu_day': 2, 'admin_day': 3, 'wakabayashi_day': 4, 'er_night': 5, 'icu_night': 6, 'admin_night': 7, 'wakabayashi_night': 8 };
+
+                        let dailyDuties = [];
+                        doctors.forEach(doc => {
+                            const reason = unavailability[doc.id]?.[day];
+                            if (reason && dutyMap[reason]) {
+                                dailyDuties.push({ name: doc.name, duty: dutyMap[reason], order: dutyOrder[reason] });
+                            }
+                        });
+                        dailyDuties.sort((a, b) => a.order - b.order);
+
+                        if (dailyDuties.length > 0) {
+                            let otherRichText = [];
+                            dailyDuties.forEach((item, idx) => {
+                                // [勤務名]と氏名を両方大きく・太くする
+                                otherRichText.push({ font: { size: 14, bold: true, color: { argb: item.duty.color } }, text: `[${item.duty.short}] ` });
+                                otherRichText.push({ font: { size: 14, bold: true, color: { argb: 'FF334155' } }, text: `${item.name}` });
+                                if (idx < dailyDuties.length - 1) otherRichText.push({ text: '\n' });
+                            });
+                            otherCell.value = { richText: otherRichText };
+                            otherCell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true, indent: 1 };
+                        }
+                    }
                 });
-            }, 150);
+
+                baseRow += 4;
+            });
+
+            // ファイル書き出し
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `消化器当番スケジュール_${currentYear}年${currentMonth}月(編集用).xlsx`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showMessage('編集可能なExcelの出力が完了しました！');
         }
 
         // --- 初期化 ---
@@ -1977,5 +2132,3 @@
     </script>
 </body>
 </html>
-
-
