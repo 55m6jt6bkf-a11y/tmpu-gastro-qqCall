@@ -130,8 +130,9 @@
             color: #222 !important;
         }
         
-        .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-\[10px\], .pdf-exporting .mt-2.pt-1\.5.border-t .text-xs, .pdf-exporting .mt-2.pt-1\.5.border-t .text-sm { 
-            font-size: 30px !important; /* 当直・日直のPDF出力時のサイズも少し大きく */
+        .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-\[10px\], .pdf-exporting .mt-2.pt-1\.5.border-t .text-xs,
+        .pdf-exporting .mt-2.pt-1\.5.border-t .text-sm, .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-xs { 
+            font-size: 26px !important; 
             font-weight: 900 !important;
             padding: 12px 16px !important; 
             margin-bottom: 10px !important; 
@@ -1174,8 +1175,7 @@
                 if (dailyDuties.length > 0) {
                     otherDutiesHtml = '<div class="mt-2 pt-1.5 border-t border-slate-200/60 flex flex-col gap-1.5 md:gap-1 pointer-events-none">';
                     dailyDuties.forEach(item => {
-                        // 画面上の当直・日直も見やすくするために text-sm/md:text-[11px] と font-bold に変更
-                        otherDutiesHtml += `<div class="text-sm md:text-[11px] ${item.duty.color} ${item.duty.bg} border ${item.duty.border} px-2 md:px-1.5 py-1 md:py-1 rounded-md truncate font-bold flex justify-between items-center"><span>${item.duty.short}</span><span class="truncate ml-1.5">${item.name}</span></div>`;
+                        otherDutiesHtml += `<div class="text-sm md:text-xs font-bold ${item.duty.color} ${item.duty.bg} border ${item.duty.border} px-2 md:px-1.5 py-1 md:py-0.5 rounded-md truncate flex justify-between items-center"><span>${item.duty.short}</span><span class="truncate ml-1.5">${item.name}</span></div>`;
                     });
                     otherDutiesHtml += '</div>';
                 }
@@ -1851,15 +1851,20 @@
 
             setTimeout(() => {
                 html2canvas(element, { 
-                    scale: 1.5, 
+                    scale: 1.0, 
                     useCORS: true, 
                     backgroundColor: '#ffffff',
                     windowWidth: 2400 
                 }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/jpeg', 0.6); 
+                    const imgData = canvas.toDataURL('image/jpeg', 0.5); 
                     const { jsPDF } = window.jspdf;
                     
-                    const pdf = new jsPDF('portrait', 'mm', 'a4');
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: 'a4',
+                        compress: true 
+                    });
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = pdf.internal.pageSize.getHeight();
                     
@@ -1905,19 +1910,19 @@
                 views: [{ showGridLines: false }] 
             });
 
-            // 全体の列幅を設定 (幅を22から25へ広げる)
+            // 全体の列幅を設定
             sheet.columns = [
-                { width: 25 }, { width: 25 }, { width: 25 }, { width: 25 },
-                { width: 25 }, { width: 25 }, { width: 25 }
+                { width: 22 }, { width: 22 }, { width: 22 }, { width: 22 },
+                { width: 22 }, { width: 22 }, { width: 22 }
             ];
 
-            // タイトル行 (フォントサイズと行高さを大きく)
+            // タイトル行
             sheet.mergeCells('A1:G1');
             const titleCell = sheet.getCell('A1');
             titleCell.value = `${currentYear}年 ${currentMonth}月 消化器当番スケジュール`;
-            titleCell.font = { size: 24, bold: true, color: { argb: 'FF1E293B' } }; 
+            titleCell.font = { size: 24, bold: true, color: { argb: 'FF1E293B' } }; // slate-800
             titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-            sheet.getRow(1).height = 50;
+            sheet.getRow(1).height = 45;
 
             // 曜日ヘッダー
             const dows = [
@@ -1931,9 +1936,9 @@
             ];
 
             const headerRow = sheet.addRow(dows.map(d => d.label));
-            headerRow.height = 35; // 30 -> 35
+            headerRow.height = 30;
             headerRow.eachCell((cell, colNumber) => {
-                cell.font = { bold: true, color: { argb: dows[colNumber-1].color }, size: 16 }; // 14 -> 16
+                cell.font = { bold: true, color: { argb: dows[colNumber-1].color }, size: 14 };
                 cell.alignment = { horizontal: 'center', vertical: 'middle' };
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }; 
                 cell.border = { 
@@ -1972,11 +1977,10 @@
                 const nightShiftRow = sheet.getRow(baseRow + 2);
                 const otherRow = sheet.getRow(baseRow + 3);
 
-                // 文字サイズに合わせて行の高さを増やす
-                dateRow.height = 32;       // 28 -> 32
-                dayShiftRow.height = 55;   // 45 -> 55
-                nightShiftRow.height = 55; // 45 -> 55
-                otherRow.height = 80;      // 60 -> 80
+                dateRow.height = 28;
+                dayShiftRow.height = 50;
+                nightShiftRow.height = 50;
+                otherRow.height = 65; 
 
                 week.forEach((day, colIdx) => {
                     const colNum = colIdx + 1;
@@ -2016,7 +2020,7 @@
                     setStyle(otherCell, false, true);
 
                     if (day !== null) {
-                        // 日付 (フォントを大きく、太く)
+                        // 日付
                         const dateObj = new Date(currentYear, currentMonth - 1, day);
                         let holidayName = '';
                         if (typeof JapaneseHolidays !== 'undefined') {
@@ -2026,40 +2030,40 @@
                             holidayName = holidayName ? holidayName + '(休)' : '休診日';
                         }
                         
-                        let dateRichText = [{ font: { size: 16, bold: true, color: { argb: dateColor } }, text: `${day} ` }];
+                        let dateRichText = [{ font: { size: 14, bold: true, color: { argb: dateColor } }, text: `${day} ` }];
                         if (holidayName) {
-                            dateRichText.push({ font: { size: 12, bold: true, color: { argb: 'FFF43F5E' } }, text: holidayName });
+                            dateRichText.push({ font: { size: 10, color: { argb: 'FFF43F5E' } }, text: holidayName });
                         }
                         dateCell.value = { richText: dateRichText };
                         dateCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
 
-                        // 昼シフト (フォントを大きく、すべて太字に)
+                        // 昼シフト
                         if (scheduleData[day] && isHol && scheduleData[day].day) {
                             const sDay = scheduleData[day].day;
                             const mName = getDoctorNameById(sDay.main);
                             let shiftText = [{ font: { size: 16, bold: true, color: { argb: 'FFB45309' } }, text: `☀ 昼: ${mName}` }];
                             if (sDay.backup) {
                                 const bName = getDoctorNameById(sDay.backup);
-                                shiftText.push({ font: { size: 14, bold: true, color: { argb: 'FFD97706' } }, text: `\n     B: ${bName}` });
+                                shiftText.push({ font: { size: 12, bold: true, color: { argb: 'FFD97706' } }, text: `\n    B: ${bName}` });
                             }
                             dayShiftCell.value = { richText: shiftText };
                             dayShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBEB' } }; 
                         }
 
-                        // 夜シフト (フォントを大きく、すべて太字に)
+                        // 夜シフト
                         if (scheduleData[day] && scheduleData[day].night) {
                             const sNight = scheduleData[day].night;
                             const mName = getDoctorNameById(sNight.main);
                             let shiftText = [{ font: { size: 16, bold: true, color: { argb: 'FF4338CA' } }, text: `🌙 夜: ${mName}` }];
                             if (sNight.backup) {
                                 const bName = getDoctorNameById(sNight.backup);
-                                shiftText.push({ font: { size: 14, bold: true, color: { argb: 'FF4F46E5' } }, text: `\n     B: ${bName}` });
+                                shiftText.push({ font: { size: 12, bold: true, color: { argb: 'FF4F46E5' } }, text: `\n    B: ${bName}` });
                             }
                             nightShiftCell.value = { richText: shiftText };
                             nightShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } }; 
                         }
 
-                        // その他 当直・日直 (フォントを大きく、すべて太字に)
+                        // その他
                         const dutyMap = {
                             'er_day': { short: '救日', color: 'FF047857' },
                             'er_night': { short: '救夜', color: 'FF7E22CE' },
@@ -2084,7 +2088,6 @@
                         if (dailyDuties.length > 0) {
                             let otherRichText = [];
                             dailyDuties.forEach((item, idx) => {
-                                // [勤務名]と氏名を両方大きく・太くする
                                 otherRichText.push({ font: { size: 14, bold: true, color: { argb: item.duty.color } }, text: `[${item.duty.short}] ` });
                                 otherRichText.push({ font: { size: 14, bold: true, color: { argb: 'FF334155' } }, text: `${item.name}` });
                                 if (idx < dailyDuties.length - 1) otherRichText.push({ text: '\n' });
@@ -2132,3 +2135,5 @@
     </script>
 </body>
 </html>
+
+
