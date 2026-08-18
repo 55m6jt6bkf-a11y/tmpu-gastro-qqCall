@@ -1912,8 +1912,8 @@
 
             // 全体の列幅を設定
             sheet.columns = [
-                { width: 22 }, { width: 22 }, { width: 22 }, { width: 22 },
-                { width: 22 }, { width: 22 }, { width: 22 }
+                { width: 26 }, { width: 26 }, { width: 26 }, { width: 26 },
+                { width: 26 }, { width: 26 }, { width: 26 }
             ];
 
             // タイトル行
@@ -1977,10 +1977,10 @@
                 const nightShiftRow = sheet.getRow(baseRow + 2);
                 const otherRow = sheet.getRow(baseRow + 3);
 
-                dateRow.height = 28;
-                dayShiftRow.height = 50;
-                nightShiftRow.height = 50;
-                otherRow.height = 65; 
+                dateRow.height = 30;
+                dayShiftRow.height = 75;
+                nightShiftRow.height = 75;
+                otherRow.height = 85; 
 
                 week.forEach((day, colIdx) => {
                     const colNum = colIdx + 1;
@@ -2041,10 +2041,10 @@
                         if (scheduleData[day] && isHol && scheduleData[day].day) {
                             const sDay = scheduleData[day].day;
                             const mName = getDoctorNameById(sDay.main);
-                            let shiftText = [{ font: { size: 16, bold: true, color: { argb: 'FFB45309' } }, text: `☀ 昼: ${mName}` }];
+                            let shiftText = [{ font: { size: 24, bold: true, color: { argb: 'FFB45309' } }, text: `☀ 昼: ${mName}` }];
                             if (sDay.backup) {
                                 const bName = getDoctorNameById(sDay.backup);
-                                shiftText.push({ font: { size: 12, bold: true, color: { argb: 'FFD97706' } }, text: `\n    B: ${bName}` });
+                                shiftText.push({ font: { size: 16, bold: true, color: { argb: 'FFD97706' } }, text: `\n    B: ${bName}` });
                             }
                             dayShiftCell.value = { richText: shiftText };
                             dayShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBEB' } }; 
@@ -2054,10 +2054,10 @@
                         if (scheduleData[day] && scheduleData[day].night) {
                             const sNight = scheduleData[day].night;
                             const mName = getDoctorNameById(sNight.main);
-                            let shiftText = [{ font: { size: 16, bold: true, color: { argb: 'FF4338CA' } }, text: `🌙 夜: ${mName}` }];
+                            let shiftText = [{ font: { size: 24, bold: true, color: { argb: 'FF4338CA' } }, text: `🌙 夜: ${mName}` }];
                             if (sNight.backup) {
                                 const bName = getDoctorNameById(sNight.backup);
-                                shiftText.push({ font: { size: 12, bold: true, color: { argb: 'FF4F46E5' } }, text: `\n    B: ${bName}` });
+                                shiftText.push({ font: { size: 16, bold: true, color: { argb: 'FF4F46E5' } }, text: `\n    B: ${bName}` });
                             }
                             nightShiftCell.value = { richText: shiftText };
                             nightShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } }; 
@@ -2088,8 +2088,8 @@
                         if (dailyDuties.length > 0) {
                             let otherRichText = [];
                             dailyDuties.forEach((item, idx) => {
-                                otherRichText.push({ font: { size: 14, bold: true, color: { argb: item.duty.color } }, text: `[${item.duty.short}] ` });
-                                otherRichText.push({ font: { size: 14, bold: true, color: { argb: 'FF334155' } }, text: `${item.name}` });
+                                otherRichText.push({ font: { size: 16, bold: true, color: { argb: item.duty.color } }, text: `[${item.duty.short}] ` });
+                                otherRichText.push({ font: { size: 18, bold: true, color: { argb: 'FF334155' } }, text: `${item.name}` });
                                 if (idx < dailyDuties.length - 1) otherRichText.push({ text: '\n' });
                             });
                             otherCell.value = { richText: otherRichText };
@@ -2135,5 +2135,3 @@
     </script>
 </body>
 </html>
-
-
