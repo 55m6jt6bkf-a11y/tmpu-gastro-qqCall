@@ -108,32 +108,31 @@
         .pdf-exporting .bg-amber-50 { background-color: #fffbeb !important; border-color: #f59e0b !important; }
         .pdf-exporting .bg-indigo-50 { background-color: #eef2ff !important; border-color: #6366f1 !important; }
         
-        /* ★ 視認性向上のための修正部分 ★ */
         .pdf-exporting svg { width: 46px !important; height: 46px !important; flex-shrink: 0 !important; color: #000 !important; }
         
         .pdf-exporting .doc-main-name { 
-            font-size: 54px !important; /* 拡大 */
+            font-size: 54px !important; 
             font-weight: 900 !important; 
-            margin-left: 16px !important; /* 少し余白を調整 */
+            margin-left: 16px !important; 
             line-height: 1.4 !important;
             padding-bottom: 4px !important;
             display: inline-block !important;
             color: #000 !important;
         }
         .pdf-exporting .doc-backup-name { 
-            font-size: 34px !important; /* 拡大 */
-            font-weight: 900 !important; /* 太く */
-            margin-left: 60px !important; /* 位置微調整 */
+            font-size: 34px !important; 
+            font-weight: 900 !important; 
+            margin-left: 60px !important; 
             margin-top: 10px !important; 
             line-height: 1.4 !important;
             padding-bottom: 2px !important;
             display: inline-block !important;
-            color: #111 !important; /* より濃く */
+            color: #111 !important; 
         }
         
         .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-\[10px\], .pdf-exporting .mt-2.pt-1\.5.border-t .text-xs,
         .pdf-exporting .mt-2.pt-1\.5.border-t .text-sm, .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-xs { 
-            font-size: 32px !important; /* 拡大 */
+            font-size: 32px !important; 
             font-weight: 900 !important;
             padding: 12px 16px !important; 
             margin-bottom: 10px !important; 
@@ -141,7 +140,6 @@
             border-width: 3px !important;
             color: #000 !important;
         }
-        /* ★ ここまで ★ */
 
         .pdf-exporting .truncate { overflow: visible !important; text-overflow: clip !important; white-space: nowrap !important; }
         .pdf-exporting .whitespace-nowrap { white-space: nowrap !important; }
@@ -1934,13 +1932,25 @@
 
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('スケジュール', {
-                views: [{ showGridLines: false }] 
+                views: [{ showGridLines: false }],
+                pageSetup: {
+                    paperSize: 9, // A4
+                    orientation: 'landscape',
+                    fitToPage: true,
+                    fitToWidth: 1,
+                    fitToHeight: 1,
+                    margins: {
+                        left: 0.25, right: 0.25,
+                        top: 0.5, bottom: 0.5,
+                        header: 0.2, footer: 0.2
+                    }
+                }
             });
 
-            // 全体の列幅を設定
+            // 全体の列幅を設定 (少し広げて長い名前も収まるように)
             sheet.columns = [
-                { width: 26 }, { width: 26 }, { width: 26 }, { width: 26 },
-                { width: 26 }, { width: 26 }, { width: 26 }
+                { width: 28 }, { width: 28 }, { width: 28 }, { width: 28 },
+                { width: 28 }, { width: 28 }, { width: 28 }
             ];
 
             // タイトル行
@@ -2038,7 +2048,7 @@
                             top: isTop ? { style: 'thin', color: { argb: 'FF94A3B8' } } : { style: 'hair', color: { argb: 'FFCBD5E1' } }, 
                             bottom: isBottom ? { style: 'thin', color: { argb: 'FF94A3B8' } } : { style: 'hair', color: { argb: 'FFCBD5E1' } }
                         };
-                        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true, shrinkToFit: true };
                     };
 
                     setStyle(dateCell, true, false);
@@ -2064,33 +2074,41 @@
                         dateCell.value = { richText: dateRichText };
                         dateCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
 
-                        // 昼シフト
+                        // ★ 昼シフトの文字サイズ調整
                         if (scheduleData[day] && isHol && scheduleData[day].day) {
                             const sDay = scheduleData[day].day;
                             const mName = getDoctorNameById(sDay.main);
-                            let shiftText = [{ font: { size: 24, bold: true, color: { argb: 'FFB45309' } }, text: `☀ 昼: ${mName}` }];
+                            let shiftText = [
+                                { font: { size: 14, bold: true, color: { argb: 'FFB45309' } }, text: `[昼] ` },
+                                { font: { size: 26, bold: true, color: { argb: 'FFB45309' } }, text: `${mName}` }
+                            ];
                             if (sDay.backup) {
                                 const bName = getDoctorNameById(sDay.backup);
-                                shiftText.push({ font: { size: 16, bold: true, color: { argb: 'FFD97706' } }, text: `\n    B: ${bName}` });
+                                shiftText.push({ font: { size: 12, bold: true, color: { argb: 'FFD97706' } }, text: `\n[B] ` });
+                                shiftText.push({ font: { size: 20, bold: true, color: { argb: 'FFD97706' } }, text: `${bName}` });
                             }
                             dayShiftCell.value = { richText: shiftText };
                             dayShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBEB' } }; 
                         }
 
-                        // 夜シフト
+                        // ★ 夜シフトの文字サイズ調整
                         if (scheduleData[day] && scheduleData[day].night) {
                             const sNight = scheduleData[day].night;
                             const mName = getDoctorNameById(sNight.main);
-                            let shiftText = [{ font: { size: 24, bold: true, color: { argb: 'FF4338CA' } }, text: `🌙 夜: ${mName}` }];
+                            let shiftText = [
+                                { font: { size: 14, bold: true, color: { argb: 'FF4338CA' } }, text: `[夜] ` },
+                                { font: { size: 26, bold: true, color: { argb: 'FF4338CA' } }, text: `${mName}` }
+                            ];
                             if (sNight.backup) {
                                 const bName = getDoctorNameById(sNight.backup);
-                                shiftText.push({ font: { size: 16, bold: true, color: { argb: 'FF4F46E5' } }, text: `\n    B: ${bName}` });
+                                shiftText.push({ font: { size: 12, bold: true, color: { argb: 'FF4F46E5' } }, text: `\n[B] ` });
+                                shiftText.push({ font: { size: 20, bold: true, color: { argb: 'FF4F46E5' } }, text: `${bName}` });
                             }
                             nightShiftCell.value = { richText: shiftText };
                             nightShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } }; 
                         }
 
-                        // その他
+                        // ★ その他の当番の文字サイズ調整
                         const dutyMap = {
                             'er_day': { short: '救日', color: 'FF047857' },
                             'er_night': { short: '救夜', color: 'FF7E22CE' },
@@ -2115,12 +2133,12 @@
                         if (dailyDuties.length > 0) {
                             let otherRichText = [];
                             dailyDuties.forEach((item, idx) => {
-                                otherRichText.push({ font: { size: 16, bold: true, color: { argb: item.duty.color } }, text: `[${item.duty.short}] ` });
-                                otherRichText.push({ font: { size: 18, bold: true, color: { argb: 'FF334155' } }, text: `${item.name}` });
+                                otherRichText.push({ font: { size: 14, bold: true, color: { argb: item.duty.color } }, text: `[${item.duty.short}] ` });
+                                otherRichText.push({ font: { size: 20, bold: true, color: { argb: 'FF334155' } }, text: `${item.name}` });
                                 if (idx < dailyDuties.length - 1) otherRichText.push({ text: '\n' });
                             });
                             otherCell.value = { richText: otherRichText };
-                            otherCell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true, indent: 1 };
+                            otherCell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true, indent: 1, shrinkToFit: true };
                         }
                     }
                 });
