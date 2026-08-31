@@ -108,31 +108,32 @@
         .pdf-exporting .bg-amber-50 { background-color: #fffbeb !important; border-color: #f59e0b !important; }
         .pdf-exporting .bg-indigo-50 { background-color: #eef2ff !important; border-color: #6366f1 !important; }
         
-        .pdf-exporting svg { width: 38px !important; height: 38px !important; flex-shrink: 0 !important; color: #000 !important; }
+        /* ★ 視認性向上のための修正部分 ★ */
+        .pdf-exporting svg { width: 46px !important; height: 46px !important; flex-shrink: 0 !important; color: #000 !important; }
         
         .pdf-exporting .doc-main-name { 
-            font-size: 42px !important; 
+            font-size: 54px !important; /* 拡大 */
             font-weight: 900 !important; 
-            margin-left: 12px !important; 
+            margin-left: 16px !important; /* 少し余白を調整 */
             line-height: 1.4 !important;
             padding-bottom: 4px !important;
             display: inline-block !important;
             color: #000 !important;
         }
         .pdf-exporting .doc-backup-name { 
-            font-size: 28px !important; 
-            font-weight: 800 !important; 
-            margin-left: 50px !important; 
+            font-size: 34px !important; /* 拡大 */
+            font-weight: 900 !important; /* 太く */
+            margin-left: 60px !important; /* 位置微調整 */
             margin-top: 10px !important; 
             line-height: 1.4 !important;
             padding-bottom: 2px !important;
             display: inline-block !important;
-            color: #222 !important;
+            color: #111 !important; /* より濃く */
         }
         
         .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-\[10px\], .pdf-exporting .mt-2.pt-1\.5.border-t .text-xs,
         .pdf-exporting .mt-2.pt-1\.5.border-t .text-sm, .pdf-exporting .mt-2.pt-1\.5.border-t .md\:text-xs { 
-            font-size: 26px !important; 
+            font-size: 32px !important; /* 拡大 */
             font-weight: 900 !important;
             padding: 12px 16px !important; 
             margin-bottom: 10px !important; 
@@ -140,6 +141,7 @@
             border-width: 3px !important;
             color: #000 !important;
         }
+        /* ★ ここまで ★ */
 
         .pdf-exporting .truncate { overflow: visible !important; text-overflow: clip !important; white-space: nowrap !important; }
         .pdf-exporting .whitespace-nowrap { white-space: nowrap !important; }
