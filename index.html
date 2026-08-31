@@ -1248,6 +1248,8 @@
             if (day > 1) {
                 // 救急当直の翌日は除外
                 if (unavailability[doc.id]?.[day - 1] === 'er_night') return false;
+                // 追加: 若林当直の翌日は除外
+                if (unavailability[doc.id]?.[day - 1] === 'wakabayashi_night') return false;
                 // 手動変更時は前日の消化器当番(連続日程)でも候補に含めるため、以下の条件を除外しない
             }
             if (day === 1) {
@@ -1256,8 +1258,19 @@
                 const prevLastDay = getDaysInMonth(pYear, pMonth);
                 // 救急当直の翌日は除外
                 if (prevMonthUnavailability[doc.id]?.[prevLastDay] === 'er_night') return false;
+                // 追加: 若林当直の翌日は除外
+                if (prevMonthUnavailability[doc.id]?.[prevLastDay] === 'wakabayashi_night') return false;
                 // 手動変更時は前日の消化器当番(連続日程)でも候補に含めるため、以下の条件を除外しない
             }
+
+            // 追加: 若林日直の「前日の夜間」は除外
+            if (shiftType === 'night') {
+                if (day < daysInMonth) {
+                    if (unavailability[doc.id]?.[day + 1] === 'wakabayashi_day') return false;
+                }
+                // ※月末日の場合は、翌月1日のデータが未取得のため同月内のみの制限
+            }
+
             return true;
         }
 
@@ -1554,7 +1567,16 @@
                 if (reason === 'night_unavailable' && type === 'night') return false;
                 // 'preferred' の場合はスキップ（問題なく割り当て可能）
             }
+            
             if (day > 1 && unavailability[doctor.id]?.[day - 1] === 'er_night') return false;
+            
+            // 追加: 前日が若林当直の場合は不可
+            if (day > 1 && unavailability[doctor.id]?.[day - 1] === 'wakabayashi_night') return false;
+            
+            // 追加: 翌日が若林日直の場合、夜のシフトは不可
+            if (type === 'night' && day < daysInMonth) {
+                if (unavailability[doctor.id]?.[day + 1] === 'wakabayashi_day') return false;
+            }
 
             if (day > 1 && currentSchedule[day - 1]?.night) {
                 const prevN = currentSchedule[day - 1].night;
@@ -1567,6 +1589,9 @@
                 const prevLastDay = getDaysInMonth(pYear, pMonth);
                 
                 if (prevMonthUnavailability[doctor.id]?.[prevLastDay] === 'er_night') return false;
+                
+                // 追加: 前月末日が若林当直の場合は不可
+                if (prevMonthUnavailability[doctor.id]?.[prevLastDay] === 'wakabayashi_night') return false;
                 
                 if (prevMonthScheduleData[prevLastDay]?.night) {
                     const prevN = prevMonthScheduleData[prevLastDay].night;
