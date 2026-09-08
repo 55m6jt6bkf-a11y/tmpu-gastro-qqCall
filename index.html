@@ -55,7 +55,7 @@
         .toast-leave { opacity: 0; transform: translate(-50%, -20px); pointer-events: none; }
         
         /* =========================================
-           PDF出力時のレイアウトおよび文字サイズ調整 
+           標準PDF出力時のレイアウトおよび文字サイズ調整 
            ========================================= */
         .pdf-exporting { width: 2400px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; height: auto !important; background: #ffffff !important; }
         .pdf-exporting * { line-height: 1.5 !important; opacity: 1 !important; }
@@ -139,6 +139,51 @@
             line-height: 1.4 !important;
             border-width: 3px !important;
             color: #000 !important;
+        }
+
+        /* ★ 掲示用PDF（横長）専用のレイアウト調整 ★ 
+           担当者が入って縦に伸びても横長比率を維持するため幅を8000pxに大幅拡張 */
+        .pdf-exporting.poster-mode { width: 8000px !important; }
+        .pdf-exporting.poster-mode #calendar-grid { min-width: 8000px !important; }
+        .pdf-exporting.poster-mode #calendar-grid > div { padding: 30px 40px !important; }
+        
+        /* 曜日ヘッダーの文字を大きく */
+        .pdf-exporting.poster-mode #calendar-grid > div.text-center {
+            padding: 40px 0 !important;
+            font-size: 140px !important;
+        }
+        
+        .pdf-exporting.poster-mode #calendar-header h2 { font-size: 180px !important; }
+        .pdf-exporting.poster-mode #calendar-header span { font-size: 90px !important; padding: 40px 60px !important; border-width: 6px !important;}
+        
+        /* 日付の文字を大きく */
+        .pdf-exporting.poster-mode .font-bold.text-base, 
+        .pdf-exporting.poster-mode .font-bold.md\:text-sm { font-size: 160px !important; } 
+        
+        /* 祝日などのテキストを少し大きく */
+        .pdf-exporting.poster-mode .text-rose-500.font-medium { font-size: 100px !important; margin-top: 16px !important; }
+        
+        .pdf-exporting.poster-mode svg { width: 120px !important; height: 120px !important; }
+        
+        .pdf-exporting.poster-mode .md\:p-1\.5, .pdf-exporting.poster-mode .p-2 { 
+            padding: 24px 32px !important; 
+            margin-bottom: 16px !important; 
+            border-width: 6px !important;
+            border-radius: 20px !important;
+        }
+
+        .pdf-exporting.poster-mode .doc-main-name { font-size: 140px !important; margin-left: 30px !important; }
+        .pdf-exporting.poster-mode .doc-backup-name { font-size: 96px !important; margin-left: 150px !important; margin-top: 24px !important; }
+        
+        .pdf-exporting.poster-mode .mt-2.pt-1\.5.border-t .md\:text-\[10px\], 
+        .pdf-exporting.poster-mode .mt-2.pt-1\.5.border-t .text-xs,
+        .pdf-exporting.poster-mode .mt-2.pt-1\.5.border-t .text-sm, 
+        .pdf-exporting.poster-mode .mt-2.pt-1\.5.border-t .md\:text-xs { 
+            font-size: 96px !important; 
+            padding: 24px 32px !important;
+            margin-bottom: 16px !important;
+            border-width: 6px !important;
+            border-radius: 16px !important;
         }
 
         .pdf-exporting .truncate { overflow: visible !important; text-overflow: clip !important; white-space: nowrap !important; }
@@ -285,7 +330,11 @@
                 </button>
                 <button onclick="exportToPDF()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    PDF出力
+                    標準PDF
+                </button>
+                <button onclick="exportToPDFPoster()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-sky-50 text-slate-700 hover:text-sky-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    掲示用PDF
                 </button>
                 <button onclick="exportToExcelEditable()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1919,6 +1968,71 @@
                     showMessage('PDF出力に失敗しました', true);
                     header.classList.add('hidden');
                     element.classList.remove('pdf-exporting');
+                });
+            }, 150);
+        }
+
+        function exportToPDFPoster() {
+            if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+                showMessage('PDF出力ライブラリが読み込まれていません。ページをリロードしてください。', true);
+                return;
+            }
+            
+            showMessage('掲示用PDFを出力しています。しばらくお待ちください...');
+            
+            const element = document.getElementById('calendar-export-area');
+            const header = document.getElementById('calendar-header');
+            
+            document.getElementById('export-month-display').textContent = `${currentYear}年 ${currentMonth}月`;
+            header.classList.remove('hidden');
+
+            element.classList.add('pdf-exporting', 'poster-mode');
+
+            setTimeout(() => {
+                html2canvas(element, { 
+                    scale: 0.3, // 解像度のスケールを下げてファイルサイズを大幅に削減
+                    useCORS: true, 
+                    backgroundColor: '#ffffff',
+                    windowWidth: 8000 // 幅を極限まで大きくして全体比率を強制的に横長にする
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/jpeg', 0.4); // JPEG圧縮率を調整
+                    const { jsPDF } = window.jspdf;
+                    
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: 'a4',
+                        compress: true 
+                    });
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    
+                    const margin = 5;
+                    const availableWidth = pdfWidth - (margin * 2);
+                    const availableHeight = (pdfHeight / 2) - (margin * 2); // A4縦の「上半分」
+                    
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    
+                    const ratio = Math.min(availableWidth / imgWidth, availableHeight / imgHeight);
+                    
+                    const finalWidth = imgWidth * ratio;
+                    const finalHeight = imgHeight * ratio;
+                    
+                    const x = margin + (availableWidth - finalWidth) / 2;
+                    const y = margin + (availableHeight - finalHeight) / 2;
+                    
+                    pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
+                    pdf.save(`消化器当番スケジュール_${currentYear}年${currentMonth}月_掲示用.pdf`);
+                    
+                    header.classList.add('hidden');
+                    element.classList.remove('pdf-exporting', 'poster-mode');
+                    showMessage('掲示用PDFの出力が完了しました！');
+                }).catch(err => {
+                    console.error(err);
+                    showMessage('PDF出力に失敗しました', true);
+                    header.classList.add('hidden');
+                    element.classList.remove('pdf-exporting', 'poster-mode');
                 });
             }, 150);
         }
