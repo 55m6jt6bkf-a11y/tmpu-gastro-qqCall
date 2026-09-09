@@ -44,7 +44,7 @@
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         
         .sticky-col { position: sticky; left: 0; background-color: #ffffff; z-index: 10; box-shadow: inset -1px 0 0 #f1f5f9; }
-        .sticky-head { position: sticky; top: 0; background-color: #f8fafc; z-index: 10; box-shadow: inset 0 -1px 0 #f1f5f9; }
+        .sticky-head { position: sticky top: 0; background-color: #f8fafc; z-index: 10; box-shadow: inset 0 -1px 0 #f1f5f9; }
         .sticky-cross { position: sticky; top: 0; left: 0; background-color: #f8fafc; z-index: 20; box-shadow: inset -1px -1px 0 #f1f5f9; }
         
         select.compact { -webkit-appearance: none; appearance: none; padding: 4px; text-align: center; width: 100%; cursor: pointer; background-color: transparent; border-radius: 4px; transition: all 0.2s; }
@@ -55,7 +55,7 @@
         .toast-leave { opacity: 0; transform: translate(-50%, -20px); pointer-events: none; }
         
         /* =========================================
-           標準PDF出力時のレイアウトおよび文字サイズ調整 
+           PDF出力時のレイアウトおよび文字サイズ調整 
            ========================================= */
         .pdf-exporting { width: 2400px !important; max-width: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; height: auto !important; background: #ffffff !important; }
         .pdf-exporting * { line-height: 1.5 !important; opacity: 1 !important; }
@@ -139,51 +139,6 @@
             line-height: 1.4 !important;
             border-width: 3px !important;
             color: #000 !important;
-        }
-
-        /* ★ 掲示用PDF（横長）専用のレイアウト調整 ★ 
-           担当者が入って縦に伸びても横長比率を維持するため幅を8000pxに大幅拡張 */
-        .pdf-exporting.poster-mode { width: 8000px !important; }
-        .pdf-exporting.poster-mode #calendar-grid { min-width: 8000px !important; }
-        .pdf-exporting.poster-mode #calendar-grid > div { padding: 30px 40px !important; }
-        
-        /* 曜日ヘッダーの文字を大きく */
-        .pdf-exporting.poster-mode #calendar-grid > div.text-center {
-            padding: 40px 0 !important;
-            font-size: 140px !important;
-        }
-        
-        .pdf-exporting.poster-mode #calendar-header h2 { font-size: 180px !important; }
-        .pdf-exporting.poster-mode #calendar-header span { font-size: 90px !important; padding: 40px 60px !important; border-width: 6px !important;}
-        
-        /* 日付の文字を大きく */
-        .pdf-exporting.poster-mode .font-bold.text-base, 
-        .pdf-exporting.poster-mode .font-bold.md\:text-sm { font-size: 160px !important; } 
-        
-        /* 祝日などのテキストを少し大きく */
-        .pdf-exporting.poster-mode .text-rose-500.font-medium { font-size: 100px !important; margin-top: 16px !important; }
-        
-        .pdf-exporting.poster-mode svg { width: 120px !important; height: 120px !important; }
-        
-        .pdf-exporting.poster-mode .md\:p-1\.5, .pdf-exporting.poster-mode .p-2 { 
-            padding: 24px 32px !important; 
-            margin-bottom: 16px !important; 
-            border-width: 6px !important;
-            border-radius: 20px !important;
-        }
-
-        .pdf-exporting.poster-mode .doc-main-name { font-size: 140px !important; margin-left: 30px !important; }
-        .pdf-exporting.poster-mode .doc-backup-name { font-size: 96px !important; margin-left: 150px !important; margin-top: 24px !important; }
-        
-        .pdf-exporting.poster-mode .mt-2.pt-1\.5.border-t .md\:text-\[10px\], 
-        .pdf-exporting.poster-mode .mt-2.pt-1\.5.border-t .text-xs,
-        .pdf-exporting.poster-mode .mt-2.pt-1\.5.border-t .text-sm, 
-        .pdf-exporting.poster-mode .mt-2.pt-1\.5.border-t .md\:text-xs { 
-            font-size: 96px !important; 
-            padding: 24px 32px !important;
-            margin-bottom: 16px !important;
-            border-width: 6px !important;
-            border-radius: 16px !important;
         }
 
         .pdf-exporting .truncate { overflow: visible !important; text-overflow: clip !important; white-space: nowrap !important; }
@@ -330,11 +285,7 @@
                 </button>
                 <button onclick="exportToPDF()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    標準PDF
-                </button>
-                <button onclick="exportToPDFPoster()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-sky-50 text-slate-700 hover:text-sky-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
-                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    掲示用PDF
+                    PDF出力
                 </button>
                 <button onclick="exportToExcelEditable()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -351,7 +302,7 @@
                 <div id="calendar-export-area" class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative">
                     <div id="calendar-header" class="hidden px-4 sm:px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                         <h2 class="font-bold text-lg text-slate-800" id="export-month-display"></h2>
-                        <span class="text-xs sm:text-sm text-slate-500 font-medium bg-white px-3 py-1 rounded-lg border border-slate-200">消化器当番スケジュール</span>
+                        <span class="text-xs sm:text-sm text-slate-500 font-medium bg-white px-3 py-1 rounded-lg border border-slate-200">消化器内科　救急 On Call当番表</span>
                     </div>
                     <div class="calendar-scroll w-full">
                         <div id="calendar-grid" class="grid grid-cols-1 md:grid-cols-7 bg-slate-100 md:gap-[1px] md:min-w-[900px] lg:min-w-full">
@@ -1958,7 +1909,7 @@
                     const y = margin + (availableHeight - finalHeight) / 2;
                     
                     pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
-                    pdf.save(`消化器当番スケジュール_${currentYear}年${currentMonth}月.pdf`);
+                    pdf.save(`消化器内科　救急 On Call当番表_${currentYear}年${currentMonth}月.pdf`);
                     
                     header.classList.add('hidden');
                     element.classList.remove('pdf-exporting');
@@ -1968,71 +1919,6 @@
                     showMessage('PDF出力に失敗しました', true);
                     header.classList.add('hidden');
                     element.classList.remove('pdf-exporting');
-                });
-            }, 150);
-        }
-
-        function exportToPDFPoster() {
-            if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
-                showMessage('PDF出力ライブラリが読み込まれていません。ページをリロードしてください。', true);
-                return;
-            }
-            
-            showMessage('掲示用PDFを出力しています。しばらくお待ちください...');
-            
-            const element = document.getElementById('calendar-export-area');
-            const header = document.getElementById('calendar-header');
-            
-            document.getElementById('export-month-display').textContent = `${currentYear}年 ${currentMonth}月`;
-            header.classList.remove('hidden');
-
-            element.classList.add('pdf-exporting', 'poster-mode');
-
-            setTimeout(() => {
-                html2canvas(element, { 
-                    scale: 0.3, // 解像度のスケールを下げてファイルサイズを大幅に削減
-                    useCORS: true, 
-                    backgroundColor: '#ffffff',
-                    windowWidth: 8000 // 幅を極限まで大きくして全体比率を強制的に横長にする
-                }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/jpeg', 0.4); // JPEG圧縮率を調整
-                    const { jsPDF } = window.jspdf;
-                    
-                    const pdf = new jsPDF({
-                        orientation: 'portrait',
-                        unit: 'mm',
-                        format: 'a4',
-                        compress: true 
-                    });
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = pdf.internal.pageSize.getHeight();
-                    
-                    const margin = 5;
-                    const availableWidth = pdfWidth - (margin * 2);
-                    const availableHeight = (pdfHeight / 2) - (margin * 2); // A4縦の「上半分」
-                    
-                    const imgWidth = canvas.width;
-                    const imgHeight = canvas.height;
-                    
-                    const ratio = Math.min(availableWidth / imgWidth, availableHeight / imgHeight);
-                    
-                    const finalWidth = imgWidth * ratio;
-                    const finalHeight = imgHeight * ratio;
-                    
-                    const x = margin + (availableWidth - finalWidth) / 2;
-                    const y = margin + (availableHeight - finalHeight) / 2;
-                    
-                    pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
-                    pdf.save(`消化器当番スケジュール_${currentYear}年${currentMonth}月_掲示用.pdf`);
-                    
-                    header.classList.add('hidden');
-                    element.classList.remove('pdf-exporting', 'poster-mode');
-                    showMessage('掲示用PDFの出力が完了しました！');
-                }).catch(err => {
-                    console.error(err);
-                    showMessage('PDF出力に失敗しました', true);
-                    header.classList.add('hidden');
-                    element.classList.remove('pdf-exporting', 'poster-mode');
                 });
             }, 150);
         }
@@ -2070,7 +1956,7 @@
             // タイトル行
             sheet.mergeCells('A1:G1');
             const titleCell = sheet.getCell('A1');
-            titleCell.value = `${currentYear}年 ${currentMonth}月 消化器当番スケジュール`;
+            titleCell.value = `${currentYear}年 ${currentMonth}月 消化器内科　救急 On Call当番表`;
             titleCell.font = { size: 24, bold: true, color: { argb: 'FF1E293B' } }; // slate-800
             titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
             sheet.getRow(1).height = 45;
@@ -2181,14 +2067,16 @@
                             holidayName = holidayName ? holidayName + '(休)' : '休診日';
                         }
                         
-                        let dateRichText = [{ font: { size: 14, bold: true, color: { argb: dateColor } }, text: `${day} ` }];
+                        // ★ Excelの日付のフォントサイズを14から22へ拡大
+                        let dateRichText = [{ font: { size: 22, bold: true, color: { argb: dateColor } }, text: `${day} ` }];
                         if (holidayName) {
-                            dateRichText.push({ font: { size: 10, color: { argb: 'FFF43F5E' } }, text: holidayName });
+                            // 祝日名も少しだけ大きく
+                            dateRichText.push({ font: { size: 12, color: { argb: 'FFF43F5E' } }, text: holidayName });
                         }
                         dateCell.value = { richText: dateRichText };
                         dateCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
 
-                        // ★ 昼シフトの文字サイズ調整
+                        // 昼シフト
                         if (scheduleData[day] && isHol && scheduleData[day].day) {
                             const sDay = scheduleData[day].day;
                             const mName = getDoctorNameById(sDay.main);
@@ -2205,7 +2093,7 @@
                             dayShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBEB' } }; 
                         }
 
-                        // ★ 夜シフトの文字サイズ調整
+                        // 夜シフト
                         if (scheduleData[day] && scheduleData[day].night) {
                             const sNight = scheduleData[day].night;
                             const mName = getDoctorNameById(sNight.main);
@@ -2222,7 +2110,7 @@
                             nightShiftCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } }; 
                         }
 
-                        // ★ その他の当番の文字サイズ調整
+                        // その他の当番
                         const dutyMap = {
                             'er_day': { short: '救日', color: 'FF047857' },
                             'er_night': { short: '救夜', color: 'FF7E22CE' },
@@ -2266,7 +2154,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `消化器当番スケジュール_${currentYear}年${currentMonth}月(編集用).xlsx`;
+            a.download = `消化器内科　救急 On Call当番表_${currentYear}年${currentMonth}月(編集用).xlsx`;
             a.click();
             window.URL.revokeObjectURL(url);
             
