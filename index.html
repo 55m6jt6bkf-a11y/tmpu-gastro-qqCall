@@ -44,7 +44,7 @@
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         
         .sticky-col { position: sticky; left: 0; background-color: #ffffff; z-index: 10; box-shadow: inset -1px 0 0 #f1f5f9; }
-        .sticky-head { position: sticky top: 0; background-color: #f8fafc; z-index: 10; box-shadow: inset 0 -1px 0 #f1f5f9; }
+        .sticky-head { position: sticky; top: 0; background-color: #f8fafc; z-index: 10; box-shadow: inset 0 -1px 0 #f1f5f9; }
         .sticky-cross { position: sticky; top: 0; left: 0; background-color: #f8fafc; z-index: 20; box-shadow: inset -1px -1px 0 #f1f5f9; }
         
         select.compact { -webkit-appearance: none; appearance: none; padding: 4px; text-align: center; width: 100%; cursor: pointer; background-color: transparent; border-radius: 4px; transition: all 0.2s; }
@@ -337,10 +337,14 @@
         </div>
 
         <div id="tab-settings" class="tab-content hidden space-y-4 sm:space-y-6">
-            <div class="flex justify-end gap-2 sm:gap-3">
+            <div class="flex flex-wrap justify-end gap-2 sm:gap-3">
                 <button onclick="undo()" id="undo-btn-settings" disabled class="px-3 sm:px-4 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95 opacity-50 cursor-not-allowed mr-auto">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                     <span>元に戻す</span>
+                </button>
+                <button onclick="exportSettingsToExcel()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-slate-200 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span class="hidden sm:inline">Excel</span>出力
                 </button>
                 <button onclick="resetSettings()" class="px-3 sm:px-6 py-2.5 sm:py-3 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-2 active:scale-95">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -602,7 +606,6 @@
                 }
             });
         }
-        // -------------------------------
         
         function generateId() {
             return 'doc_' + Math.random().toString(36).substr(2, 9);
@@ -2067,10 +2070,8 @@
                             holidayName = holidayName ? holidayName + '(休)' : '休診日';
                         }
                         
-                        // ★ Excelの日付のフォントサイズを14から22へ拡大
                         let dateRichText = [{ font: { size: 22, bold: true, color: { argb: dateColor } }, text: `${day} ` }];
                         if (holidayName) {
-                            // 祝日名も少しだけ大きく
                             dateRichText.push({ font: { size: 12, color: { argb: 'FFF43F5E' } }, text: holidayName });
                         }
                         dateCell.value = { richText: dateRichText };
@@ -2159,6 +2160,168 @@
             window.URL.revokeObjectURL(url);
             
             showMessage('編集可能なExcelの出力が完了しました！');
+        }
+
+        async function exportSettingsToExcel() {
+            if (typeof ExcelJS === 'undefined') {
+                showMessage('Excel出力ライブラリが読み込まれていません。', true);
+                return;
+            }
+            showMessage('月間設定のExcelを出力しています...');
+
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('除外日・不可条件', {
+                views: [{ showGridLines: false, state: 'frozen', xSplit: 1, ySplit: 2 }],
+                pageSetup: {
+                    paperSize: 9, // A4
+                    orientation: 'landscape',
+                    fitToPage: true,
+                    fitToWidth: 1,
+                    fitToHeight: 1,
+                    margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 }
+                }
+            });
+
+            // 列幅の設定
+            const columns = [{ width: 18 }]; // A列(氏名)
+            for (let d = 1; d <= daysInMonth; d++) {
+                columns.push({ width: 14 });
+            }
+            sheet.columns = columns;
+
+            // タイトル行
+            const lastColLetter = sheet.getColumn(daysInMonth + 1).letter;
+            sheet.mergeCells(`A1:${lastColLetter}1`);
+            const titleCell = sheet.getCell('A1');
+            titleCell.value = `${currentYear}年 ${currentMonth}月 除外日・不可条件設定`;
+            titleCell.font = { size: 18, bold: true, color: { argb: 'FF1E293B' } }; // slate-800
+            titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            sheet.getRow(1).height = 30;
+
+            // ヘッダー行
+            const headerRow = sheet.getRow(2);
+            headerRow.height = 25;
+            const nameHeaderCell = headerRow.getCell(1);
+            nameHeaderCell.value = '氏名';
+            nameHeaderCell.font = { bold: true, size: 12, color: { argb: 'FF475569' } }; // slate-600
+            nameHeaderCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            nameHeaderCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }; // slate-50
+            nameHeaderCell.border = {
+                top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+            };
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const colNum = d + 1;
+                const cell = headerRow.getCell(colNum);
+                const dateObj = new Date(currentYear, currentMonth - 1, d);
+                const dowNum = dateObj.getDay();
+                const dowStr = getDayOfWeek(currentYear, currentMonth, d);
+                
+                let isPublicHoliday = false;
+                if (typeof JapaneseHolidays !== 'undefined' && JapaneseHolidays.isHoliday(dateObj)) isPublicHoliday = true;
+                if (customHolidays.includes(d)) isPublicHoliday = true;
+
+                let fontColor = 'FF475569'; // slate-600
+                if (dowNum === 6) fontColor = 'FF4F46E5'; // indigo-600
+                if (dowNum === 0 || isPublicHoliday) fontColor = 'FFE11D48'; // rose-600
+
+                const isHol = isHolidayDay(d);
+                const bgColor = isHol ? 'FFFFF1F2' : 'FFF8FAFC'; // rose-50 or slate-50
+
+                cell.value = `${d}日(${dowStr})`;
+                cell.font = { bold: true, size: 11, color: { argb: fontColor } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+                cell.border = {
+                    top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                    bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                    left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                    right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+                };
+            }
+
+            // データ行
+            let currentRowIdx = 3;
+            doctors.forEach((doc, index) => {
+                const row = sheet.getRow(currentRowIdx);
+                row.height = 25;
+                const isEven = index % 2 === 0;
+                const rowBaseBg = isEven ? 'FFFFFFFF' : 'FFF8FAFC';
+
+                const nameCell = row.getCell(1);
+                nameCell.value = doc.name;
+                nameCell.font = { size: 11, color: { argb: 'FF334155' } }; // slate-700
+                nameCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+                nameCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBaseBg } };
+                nameCell.border = {
+                    top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                    bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                    left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                    right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+                };
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const colNum = d + 1;
+                    const cell = row.getCell(colNum);
+                    const isHol = isHolidayDay(d);
+                    const val = unavailability[doc.id]?.[d] || '';
+
+                    let cellBg = isHol ? (isEven ? 'FFFFF1F2' : 'FFFFE4E6') : rowBaseBg; // rose-50/30 or rose-50/80
+                    let fontColor = 'FF334155'; // slate-700
+                    let cellValue = '-';
+                    let isBold = false;
+
+                    if (val) {
+                        const reasonObj = REASONS.find(r => r.val === val);
+                        cellValue = reasonObj ? reasonObj.label : val;
+
+                        if (['vacation'].includes(val)) {
+                            cellBg = 'FFFEE2E2'; // rose-100
+                            fontColor = 'FFE11D48'; // rose-700
+                            isBold = true;
+                        } else if (['unavailable', 'day_unavailable', 'night_unavailable'].includes(val)) {
+                            cellBg = 'FFFEF3C7'; // amber-100
+                            fontColor = 'FFB45309'; // amber-700
+                            isBold = true;
+                        } else if (val === 'preferred') {
+                            cellBg = 'FFE0F2FE'; // sky-100
+                            fontColor = 'FF0369A1'; // sky-700
+                            isBold = true;
+                        } else {
+                            cellBg = 'FFE0E7FF'; // indigo-100
+                            fontColor = 'FF4338CA'; // indigo-700
+                            isBold = true;
+                        }
+                    }
+
+                    cell.value = cellValue === '-' ? '' : cellValue;
+                    cell.font = { size: 10, color: { argb: fontColor }, bold: isBold };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cellBg } };
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                        bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                        left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                        right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+                    };
+                }
+                currentRowIdx++;
+            });
+
+            // ファイル書き出し
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `消化器内科_月間設定_${currentYear}年${currentMonth}月.xlsx`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showMessage('月間設定のExcel出力が完了しました！');
         }
 
         // --- 初期化 ---
