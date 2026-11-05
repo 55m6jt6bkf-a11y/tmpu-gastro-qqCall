@@ -509,6 +509,29 @@
             return new Date(year, month, 0).getDate();
         }
 
+        // 年末年始(2026年12月に2027年1月1日〜3日を含める)ための関数
+        function getActualDaysInMonth(year, month) {
+            let days = getDaysInMonth(year, month);
+            if (year === 2026 && month === 12) {
+                days += 3;
+            }
+            return days;
+        }
+
+        function formatDayDisplay(d) {
+            if (currentYear === 2026 && currentMonth === 12 && d > 31) {
+                return `1/${d - 31}`;
+            }
+            return d;
+        }
+
+        function formatDayDisplayWithUnit(d) {
+            if (currentYear === 2026 && currentMonth === 12 && d > 31) {
+                return `1/${d - 31}`;
+            }
+            return `${d}日`;
+        }
+
         function getDayOfWeek(year, month, day) {
             const d = new Date(year, month - 1, day);
             return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()];
@@ -729,7 +752,7 @@
             const resetSettingsBtnText = document.getElementById('reset-settings-btn-text');
             if(resetSettingsBtnText) resetSettingsBtnText.textContent = `${currentMonth}月をリセット`;
 
-            daysInMonth = getDaysInMonth(currentYear, currentMonth);
+            daysInMonth = getActualDaysInMonth(currentYear, currentMonth);
             
             // 前月のデータを取得してから今月の監視を開始
             fetchPrevMonthData().then(() => {
@@ -964,12 +987,12 @@
                 
                 if (isAutoHoliday) {
                     html += `<label class="inline-flex items-center justify-center bg-rose-50 border border-rose-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs text-rose-700 opacity-60 cursor-not-allowed font-medium select-none whitespace-nowrap" title="自動的に休日扱いになります (${holidayName})">
-                        ${d}日
+                        ${formatDayDisplayWithUnit(d)}
                     </label>`;
                 } else {
                     html += `<label class="inline-flex items-center justify-center ${isChecked ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'} border px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs cursor-pointer transition-all font-medium select-none shadow-sm whitespace-nowrap">
                         <input type="checkbox" onchange="toggleCustomHoliday(${d})" ${isChecked ? 'checked' : ''} class="hidden"> 
-                        ${d}日
+                        ${formatDayDisplayWithUnit(d)}
                     </label>`;
                 }
             }
@@ -999,7 +1022,7 @@
 
                 headHtml += `<th class="sticky-head p-1 sm:p-1.5 min-w-[45px] sm:min-w-[60px] border-b border-r border-slate-200 ${bgClass}">
                     <div class="flex flex-col items-center justify-center leading-tight">
-                        <span class="font-bold ${textClass} text-xs sm:text-sm">${d}</span>
+                        <span class="font-bold ${textClass} text-xs sm:text-sm">${formatDayDisplay(d)}</span>
                         <span class="text-[9px] sm:text-[10px] font-medium ${textClass} opacity-80">${getDayOfWeek(currentYear, currentMonth, d)}</span>
                     </div>
                 </th>`;
@@ -1186,7 +1209,7 @@
                 html += `<div class="${bgClass} p-3 md:p-1.5 lg:p-3 min-h-[auto] md:min-h-[120px] hover:bg-slate-50 transition-colors flex flex-col border-b border-slate-200 md:border-transparent overflow-hidden">
                     <div class="flex flex-row md:flex-col xl:flex-row justify-between items-center md:items-start mb-3 md:mb-2">
                         <div class="flex items-baseline gap-2 md:gap-0">
-                            <span class="font-bold ${textClass} text-base md:text-sm">${d}</span>
+                            <span class="font-bold ${textClass} text-base md:text-sm">${formatDayDisplay(d)}</span>
                             <span class="md:hidden mobile-only text-xs font-bold ${textClass}">${getDayOfWeek(currentYear, currentMonth, d)}</span>
                         </div>
                         ${holidayName ? `<span class="text-xs md:text-[10px] text-rose-500 font-medium text-left xl:text-right max-w-full leading-tight truncate md:mt-0.5">${holidayName}</span>` : ''}
@@ -1258,7 +1281,7 @@
             if (day === 1) {
                 const pYear = currentMonth === 1 ? currentYear - 1 : currentYear;
                 const pMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-                const prevLastDay = getDaysInMonth(pYear, pMonth);
+                const prevLastDay = getActualDaysInMonth(pYear, pMonth);
                 // 救急当直の翌日は除外
                 if (prevMonthUnavailability[doc.id]?.[prevLastDay] === 'er_night') return false;
                 // 追加: 若林当直の翌日は除外
@@ -1375,7 +1398,7 @@
             currentEditType = type;
             
             const typeStr = type === 'day' ? '昼' : '夜';
-            document.getElementById('edit-modal-title').innerHTML = `${day}日(${getDayOfWeek(currentYear, currentMonth, day)}) <span class="text-indigo-600">${typeStr}</span> の担当変更`;
+            document.getElementById('edit-modal-title').innerHTML = `${formatDayDisplayWithUnit(day)}(${getDayOfWeek(currentYear, currentMonth, day)}) <span class="text-indigo-600">${typeStr}</span> の担当変更`;
             
             const shiftData = scheduleData[day] && scheduleData[day][type] ? scheduleData[day][type] : {main: null, backup: null};
             
@@ -1514,7 +1537,7 @@
                 
                 html += `<div class="bg-white border border-slate-200 rounded-lg p-3 flex justify-between items-center hover:border-indigo-400 hover:shadow-md transition-all">
                     <div class="flex flex-col">
-                        <span class="text-xs font-bold text-slate-500">${c.day}日(${dowStr}) ${typeStr}</span>
+                        <span class="text-xs font-bold text-slate-500">${formatDayDisplayWithUnit(c.day)}(${dowStr}) ${typeStr}</span>
                         <span class="text-[15px] font-bold text-slate-800 mt-0.5">${docName} <span class="text-xs font-medium text-slate-500 ml-1">先生と交換</span></span>
                     </div>
                     <button onclick="executeSwap(${c.day}, '${c.type}', '${c.role}')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white text-xs font-bold rounded-md transition-colors border border-indigo-200 hover:border-indigo-600 shadow-sm active:scale-95">
@@ -1536,7 +1559,7 @@
             const typeA_str = currentEditType === 'day' ? '昼' : '夜';
             const typeB_str = targetType === 'day' ? '昼' : '夜';
 
-            if(!confirm(`${currentEditDay}日 ${typeA_str} の ${docA_name}先生 と\n${targetDay}日 ${typeB_str} の ${docB_name}先生 のシフトを交換しますか？`)) return;
+            if(!confirm(`${formatDayDisplayWithUnit(currentEditDay)} ${typeA_str} の ${docA_name}先生 と\n${formatDayDisplayWithUnit(targetDay)} ${typeB_str} の ${docB_name}先生 のシフトを交換しますか？`)) return;
 
             pushToHistory(); // 履歴に保存
 
@@ -1589,7 +1612,7 @@
             if (day === 1) {
                 const pYear = currentMonth === 1 ? currentYear - 1 : currentYear;
                 const pMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-                const prevLastDay = getDaysInMonth(pYear, pMonth);
+                const prevLastDay = getActualDaysInMonth(pYear, pMonth);
                 
                 if (prevMonthUnavailability[doctor.id]?.[prevLastDay] === 'er_night') return false;
                 
@@ -1645,7 +1668,7 @@
             if (day === 1) {
                 const pYear = currentMonth === 1 ? currentYear - 1 : currentYear;
                 const pMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-                const prevLastDay = getDaysInMonth(pYear, pMonth);
+                const prevLastDay = getActualDaysInMonth(pYear, pMonth);
                 
                 const prev = prevMonthScheduleData[prevLastDay];
                 if (prev) {
@@ -1662,7 +1685,7 @@
             } else if (day === 2) {
                 const pYear = currentMonth === 1 ? currentYear - 1 : currentYear;
                 const pMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-                const prevLastDay = getDaysInMonth(pYear, pMonth);
+                const prevLastDay = getActualDaysInMonth(pYear, pMonth);
                 
                 const prev2 = prevMonthScheduleData[prevLastDay];
                 if (prev2) {
@@ -2070,7 +2093,7 @@
                             holidayName = holidayName ? holidayName + '(休)' : '休診日';
                         }
                         
-                        let dateRichText = [{ font: { size: 22, bold: true, color: { argb: dateColor } }, text: `${day} ` }];
+                        let dateRichText = [{ font: { size: 22, bold: true, color: { argb: dateColor } }, text: `${formatDayDisplay(day)} ` }];
                         if (holidayName) {
                             dateRichText.push({ font: { size: 12, color: { argb: 'FFF43F5E' } }, text: holidayName });
                         }
@@ -2231,7 +2254,7 @@
                 const isHol = isHolidayDay(d);
                 const bgColor = isHol ? 'FFFFF1F2' : 'FFF8FAFC'; // rose-50 or slate-50
 
-                cell.value = `${d}日(${dowStr})`;
+                cell.value = `${formatDayDisplayWithUnit(d)}(${dowStr})`;
                 cell.font = { bold: true, size: 11, color: { argb: fontColor } };
                 cell.alignment = { horizontal: 'center', vertical: 'middle' };
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
